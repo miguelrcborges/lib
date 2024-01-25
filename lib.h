@@ -36,6 +36,7 @@ typedef size_t usize;
 typedef ssize_t isize;
 typedef uintptr_t uptr;
 typedef ptrdiff_t dptr;
+typedef i32 bool;
 
 typedef struct {
 	u8 *str;
@@ -49,9 +50,9 @@ typedef struct {
 } s16;
 #define s16(s) (s16){(u16*)u##s, len((u##s))-1}
 
-
-typedef struct SafePointer SafePointer;
-
+typedef struct {
+	void *_ptr;
+} SafePointer;
 
 #ifdef HIDE_ASSERT
 	#define assert(x) ((void)0)
