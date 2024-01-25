@@ -22,6 +22,12 @@ SafePointer mem_reserve(usize size) {
 	return r;
 }
 
+SafePointer mem_rescommit(usize size) {
+	SafePointer r;
+	r._ptr = VirtualAlloc(NULL, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+	return r;
+}
+
 bool mem_commit(void *ptr, usize size) {
 	return (bool) (VirtualAlloc(ptr, size, MEM_COMMIT, 0x04) == NULL);
 }
