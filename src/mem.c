@@ -42,15 +42,16 @@ SafePointer Arena_alloc(Arena *a, usize size, usize alignment) {
 			if (p._ptr == NULL) {
 				return p;
 			}
-			a->first = p._ptr;
 			a->current = p._ptr;
 			a->current->offset = (void *)a->current + sizeof(ArenaBlock);
 			a->current->end = (void *)a->current + maxoff;
 			__asan_poison_memory_region(a->current->offset, maxoff);
 		} else {
-			a->first = a->free->list;
-			a->current = a->first;
+			a->current = a->free->list;
 			a->free->list = a->free->list->next;
+		}
+		if (unlikely(a->first == NULL)) {
+			a->first = a->current;
 		}
 	} 
 
