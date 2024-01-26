@@ -1,11 +1,13 @@
 #include "lib/mem.h"
 
-#if !__has_builtin(__asan_poison_memory_region)
-	#define __asan_poison_memory_region(addr, length) ((void) 0)
-#endif
-
-#if !__has_builtin(__asan_unpoison_memory_region)
-	#define __asan_unpoison_memory_region(addr, length) ((void) 0)
+#if defined(__SANITIZE_ADDRESS__) || __has_feature(address_sanitizer)
+  void __asan_poison_memory_region(void* addr, size_t size);
+  void __asan_unpoison_memory_region(void* addr, size_t size);
+  void* __asan_region_is_poisoned(void* addr, size_t size);
+#else
+  #define __asan_poison_memory_region(addr, size)
+  #define __asan_unpoison_memory_region(addr, size)
+  #define __asan_region_is_poisoned(addr, size) 0
 #endif
 
 static FreeList defaultFreeList = {
@@ -84,7 +86,7 @@ void Arena_rollback(ArenaState s) {
 	s.arena->current = s.current;
 	s.arena->current->offset = s.offset;
 	dptr free = s.arena->current->end - s.arena->current->offset;
-	__asan_poison_memory_region(a->arena->current->offset, free); 
+	__asan_poison_memory_region(s.arena->current->offset, free); 
 	for (ArenaBlock *p = s.current->next; p != NULL; p = p->next) {
 		u8 *base = (u8 *)p + sizeof(ArenaBlock);
 		dptr free = p->end - base;

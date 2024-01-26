@@ -14,6 +14,10 @@
 	#define __has_builtin(X) (0)
 #endif
 
+#ifndef __has_feature
+  #define __has_feature(x) (0)
+#endif
+
 #define len(a) (sizeof(a)/sizeof(*(a))
 #define min(a,b) (((a)<(b))?(a):(b))
 #define max(a,b) (((a)>(b))?(a):(b))
@@ -33,7 +37,6 @@ typedef float f32;
 typedef double f64;
 
 typedef size_t usize;
-typedef ssize_t isize;
 typedef uintptr_t uptr;
 typedef ptrdiff_t dptr;
 typedef i32 bool;
