@@ -8,7 +8,7 @@
 	#define __asan_unpoison_memory_region(addr, length) ((void) 0)
 #endif
 
-FreeList defaultFreeList = {
+static FreeList defaultFreeList = {
 	.list = NULL,
 	.block_len = 4096,
 };

@@ -37,8 +37,6 @@ typedef struct {
 	u8 *offset;
 } ArenaState;
 
-extern FreeList defaultFreeList;
-
 Arena Arena_create();
 Arena Arena_createCustom(FreeList *list);
 SafePointer Arena_alloc(Arena *a, usize size, usize alignment);
