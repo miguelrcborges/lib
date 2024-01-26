@@ -21,7 +21,8 @@ struct _ArenaBlock {
 };
 
 typedef struct {
-	ArenaBlock *list;
+	ArenaBlock *first;
+	ArenaBlock *last;
 	usize block_len;
 } FreeList;
 
@@ -37,12 +38,13 @@ typedef struct {
 	u8 *offset;
 } ArenaState;
 
-Arena Arena_create();
-Arena Arena_createCustom(FreeList *list);
+Arena Arena_create(FreeList *list);
 SafePointer Arena_alloc(Arena *a, usize size, usize alignment);
 ArenaState Arena_saveState(Arena *a);
 void Arena_rollback(ArenaState a);
 void Arena_free(Arena *a);
 
+FreeList FreeList_create(usize block_len);
+bool FreeList_release(FreeList *list);
 
 #endif
