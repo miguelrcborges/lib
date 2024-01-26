@@ -94,8 +94,9 @@ void Arena_rollback(ArenaState s) {
 	if (s.arena->free->first == NULL) {
 		s.arena->free->first = s.arena->current->next;
 		s.arena->free->last = s.arena->free->first;
+	} else {
+		s.arena->free->last->next = s.arena->current->next;
 	}
-	s.arena->free->last->next = s.arena->current->next;
 	s.arena->current->next = NULL;
 }
 
