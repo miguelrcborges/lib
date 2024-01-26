@@ -11,4 +11,40 @@ bool mem_commit(void *ptr, usize size);
 bool mem_decommit(void *ptr, usize size);
 bool mem_release(void *ptr, usize size);
 
+
+
+typedef struct _ArenaBlock ArenaBlock;
+struct _ArenaBlock {
+	u8 *offset;
+	u8 *end;
+	ArenaBlock *next;
+};
+
+typedef struct {
+	ArenaBlock *list;
+	usize block_len;
+} FreeList;
+
+typedef struct {
+	ArenaBlock *first;
+	ArenaBlock *current;
+	FreeList *free;
+} Arena;
+
+typedef struct {
+	Arena *arena;
+	ArenaBlock *current;
+	u8 *offset;
+} ArenaState;
+
+extern FreeList defaultFreeList;
+
+Arena Arena_create();
+Arena Arena_createCustom(FreeList *list);
+SafePointer Arena_alloc(Arena *a, usize size, usize alignment);
+ArenaState Arena_saveState(Arena *a);
+void Arena_rollback(ArenaState a);
+void Arena_free(Arena *a);
+
+
 #endif

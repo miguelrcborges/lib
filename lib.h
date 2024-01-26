@@ -64,4 +64,12 @@ typedef struct {
 	#define assert(x) ((void)0)
 #endif
 
+#if __has_builtin(__builtin_expect)
+	#define likely(expr) __builtin_expect(!!(expr), 1)
+	#define unlikely(expr) __builtin_expect(!!(expr), 0)
+#else 
+	#define likely(expr) (expr)
+	#define unlikely(expr) (expr)
+#endif
+
 #endif /* LIB_H */
