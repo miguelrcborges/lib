@@ -26,37 +26,49 @@ Arena Arena_create(FreeList *list) {
 };
 
 SafePointer Arena_alloc(Arena *a, usize size, usize alignment) {
+	usize maxoff = size + alignment + sizeof(ArenaBlock);
 	if (likely(a->current != NULL)) {
-		usize left_pad = alignment - ((uptr) a->current->offset & (alignment - 1));
-		if (unlikely(a->current->end - a->current->offset < size + left_pad))
-			a->current = NULL;
-	}
-	if (unlikely(a->current == NULL)) {
-		usize maxoff = size + alignment + sizeof(ArenaBlock);
-		if (unlikely(a->free->first == NULL || a->free->block_len > maxoff)) {
-			SafePointer p = mem_rescommit(maxoff);
+		usize left_pad = (alignment - ((uptr) a->current->offset & (alignment - 1))) & (alignment - 1);
+		if (unlikely(a->current->end - a->current->offset < size + left_pad)) {
+			if (a->free->first == NULL || a->free->block_len > maxoff) {
+				usize asize = max(maxoff, a->free->block_len);
+				SafePointer p = mem_rescommit(asize);
+				if (p._ptr == NULL) {
+					return p;
+				}
+				a->current->next = p._ptr;
+				a->current = a->current->next;
+				a->current->offset = (void *)a->current + sizeof(ArenaBlock);
+				a->current->end = (void *)a->current + asize;
+				__asan_poison_memory_region(a->current->offset, asize - sizeof(ArenaBlock));
+			} else {
+				a->current->next = a->free->first;
+				a->current = a->current->next;
+			}
+		}
+	} else {
+		if (a->free->first == NULL || a->free->block_len > maxoff) {
+			usize asize = max(maxoff, a->free->block_len);
+			SafePointer p = mem_rescommit(asize);
 			if (p._ptr == NULL) {
 				return p;
 			}
+			a->first = p._ptr;
 			a->current = p._ptr;
-			a->current->offset = (void *)a->current + sizeof(ArenaBlock);
-			a->current->end = (void *)a->current + maxoff;
-			__asan_poison_memory_region(a->current->offset, maxoff);
+			a->current->offset = (u8 *)a->current + sizeof(ArenaBlock);
+			a->current->end = (u8 *)a->current + asize;
+			__asan_poison_memory_region(a->current->offset, asize - sizeof(ArenaBlock));
 		} else {
 			a->current = a->free->first;
 			a->free->first = a->free->first->next;
 		}
-		if (unlikely(a->first == NULL)) {
-			a->first = a->current;
-		}
 	} 
-
-	usize left_pad = alignment - ((uptr) a->current->offset & (alignment - 1));
+	usize left_pad = (alignment - ((uptr) a->current->offset & (alignment - 1))) & (alignment - 1);
 	SafePointer r;
 	a->current->offset += left_pad;
-	r._ptr = a->current;
+	r._ptr = a->current->offset;
 	__asan_unpoison_memory_region(a->current->offset, size);
-	a->current += size;
+	a->current->offset += size;
 	return r;
 }
 
@@ -88,7 +100,7 @@ void Arena_rollback(ArenaState s) {
 }
 
 void Arena_free(Arena *a) {
-	for (ArenaBlock *p = a->current; p != NULL; p = p->next) {
+	for (ArenaBlock *p = a->first; p != NULL; p = p->next) {
 		u8 *base = (u8 *)p + sizeof(ArenaBlock);
 		dptr free = p->end - base;
 		p->offset = base;
@@ -97,8 +109,9 @@ void Arena_free(Arena *a) {
 	if (a->free->first == NULL) {
 		a->free->first = a->current;
 		a->free->last = a->free->first;
+	} else {
+		a->free->last->next = a->current;
 	}
-	a->free->last->next = a->current;
 	a->first = NULL;
 	a->current= NULL;
 }
@@ -113,6 +126,9 @@ FreeList FreeList_create(usize block_len) {
 
 bool FreeList_release(FreeList *list) {
 	bool r = 0;
+	if (list == NULL) {
+		list = &defaultFreeList;
+	}
 	while (list->first != NULL) {
 		ArenaBlock *c = list->first;
 		list->first = c->next;
@@ -122,5 +138,5 @@ bool FreeList_release(FreeList *list) {
 		}
 	}
 	list->last = NULL;
-	return 0;
+	return r;
 }
