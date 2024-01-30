@@ -45,7 +45,7 @@ typedef struct {
 	const u8 *str;
 	usize len;
 } string;
-#define string(s) (s8){(u8*)s, sizeof(s)-1}
+#define string(s) (string){(u8*)s, sizeof(s)-1}
 
 typedef struct {
 	void *_ptr;

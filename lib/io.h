@@ -5,7 +5,7 @@
 #include "../lib.h"
 #endif
 
-usize io_open(s8 file, u32 flags, u32 mode);
+usize io_open(string file, u32 flags, u32 mode);
 bool io_write(usize fd, const char *buf, usize len);
 bool io_read(usize fd, char *buff, usize len, usize *written);
 
