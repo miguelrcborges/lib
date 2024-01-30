@@ -1,8 +1,5 @@
 #include "lib.h"
 
-#define w32(t) __declspec(dllimport) t __stdcall
-
-
 w32(void) *VirtualAlloc(void *ptr, usize size, u32 type, u32 protect);
 w32(bool) VirtualFree(void *ptr, usize size, u32 type); 
 

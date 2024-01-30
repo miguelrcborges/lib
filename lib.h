@@ -42,16 +42,10 @@ typedef ptrdiff_t dptr;
 typedef i32 bool;
 
 typedef struct {
-	u8 *str;
-	size_t len;
-} s8;
-#define s8(s) (s8){(u8*)s, sizeof(s)-1}
-
-typedef struct {
-	u16 *str;
-	size_t len;
-} s16;
-#define s16(s) (s16){(u16*)u##s, len((u##s))-1}
+	const u8 *str;
+	usize len;
+} string;
+#define string(s) (s8){(u8*)s, sizeof(s)-1}
 
 typedef struct {
 	void *_ptr;
@@ -73,6 +67,12 @@ typedef struct {
 #else 
 	#define likely(expr) (expr)
 	#define unlikely(expr) (expr)
+#endif
+
+#ifdef _WIN32
+	#define w32(t) __declspec(dllimport) t __stdcall
+#else
+	#define w32(t)
 #endif
 
 #endif /* LIB_H */
