@@ -11,12 +11,13 @@ io_write:
 	syscall
 	cmp rax, -1
 	xor rax, rax
-	sete rax
+	sete al
 	ret
 
 .global io_read 
 io_read:
 	push rcx
+	mov rax, 0
 	syscall
 	pop rcx
 	cmp rax, -1
