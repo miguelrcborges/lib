@@ -17,7 +17,7 @@ each vector length or have a compile time variable correspondent to the length
 of the vector and ensure that, in every call, those values match.
 
 It would be possible to do this with C++ templates. However, it would 
-[generate different functions for every possible lenght](https://godbolt.org/z/1TY6enKje).
+[generate different functions for every possible length](https://godbolt.org/z/1TY6enKje).
 
 I don't know how ergonomically this could be in the language. There could be cases
 where a Vector would be dynamically generated and, consequently, size not being
