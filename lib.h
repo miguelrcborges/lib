@@ -69,6 +69,12 @@ typedef struct {
 	#define unlikely(expr) (expr)
 #endif
 
+#if __has_feature(c_static_assert)
+	#define static_assert(x, message) _Static_assert(x, message)
+#else
+	#define static_assert(x, message) assert(x)
+#endif
+
 #ifdef _WIN32
 	#define w32(t) __declspec(dllimport) t __stdcall
 #else
