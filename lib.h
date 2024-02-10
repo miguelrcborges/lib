@@ -78,7 +78,7 @@ typedef struct {
 #ifdef _WIN32
 	#define w32(t) __declspec(dllimport) t __stdcall
 #else
-	#define w32(t)
+	#define w32(t) t
 #endif
 
 #endif /* LIB_H */

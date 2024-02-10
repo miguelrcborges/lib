@@ -5,16 +5,22 @@
 #include "../lib.h"
 #endif
 
-usize io_open(string file, u32 flags, u32 mode);
-bool io_write(usize fd, const char *buf, usize len);
-bool io_read(usize fd, char *buff, usize len, usize *written);
+bool io_write(usize fd, string s);
+bool io_read(usize fd, u8 *buff, usize len, usize *written);
+bool io_open(string file, u32 mode, usize *fd);
+bool io_close(usize fd);
+
+enum IO_OPEN_MODES {
+	IO_READ,
+	IO_WRITE,
+	IO_APPEND,
+	IO_MODES_COUNT
+};
 
 #ifdef _WIN32
 	#include "io/windows.h"
 #else
-	#define getStdIn() 0
-	#define getStdOut() 1
-	#define getStdErr() 2
+	#include "io/posix.h"
 #endif
 
 #endif
