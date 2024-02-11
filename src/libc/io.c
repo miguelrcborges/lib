@@ -31,7 +31,7 @@ bool io_open(string file, u32 mode, usize *fd) {
 		[IO_APPEND] = "ab+",
 	};
 
-	if (likely(file.str[file.len] != '\0')) {
+	if (likely(file.str[file.len] == '\0')) {
 		*fd = (usize) fopen((char *)file.str, mode_lookup[mode]);
 	} else {
 		char zeroed[32768];

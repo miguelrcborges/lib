@@ -10,7 +10,7 @@ bool io_open(string file, u32 mode, usize *fd) {
 	};
 
 	int t_fd;
-	if (likely(file.str[file.len] != '\0')) {
+	if (likely(file.str[file.len] == '\0')) {
 		t_fd = open_syscall(file.str, flags_lookup[mode], mode);
 	} else {
 		u8 zeroed[4097];
