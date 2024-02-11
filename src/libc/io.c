@@ -42,7 +42,7 @@ bool io_open(string file, u32 mode, usize *fd) {
 	if (unlikely(*fd == 0)) {
 		return 1;
 	}
-	setbuf((FILE *)fd, NULL);
+	setbuf((FILE *)*fd, NULL);
 	return 0;
 }
 

@@ -17,7 +17,9 @@ enum IO_OPEN_MODES {
 	IO_MODES_COUNT
 };
 
-#ifdef _WIN32
+#if defined(LIBC_BACKEND)
+ #include "io/libc.h"
+#elif defined(_WIN32)
 	#include "io/windows.h"
 #else
 	#include "io/posix.h"
