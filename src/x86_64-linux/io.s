@@ -1,8 +1,9 @@
 .intel_syntax noprefix
 
-// usize io_open(s8 file, u32 flags, u32 mode);
-// bool io_write(usize fd, const char *buf, usize len);
-// bool io_read(usize fd, char *buff, usize len, usize *written);
+// bool io_write(usize fd, string s);
+// bool io_read(usize fd, u8 *buff, usize len, usize *written);
+// bool io_open(string file, u32 mode, usize *fd);
+// bool io_close(usize fd);
 
 .text
 .global io_write
@@ -14,18 +15,26 @@ io_write:
 	sete al
 	ret
 
-.global io_read 
+.global io_close 
+io_close:
+	mov rax, 3
+	syscall
+	ret
+
+.global io_read
 io_read:
 	push rcx
 	mov rax, 0
 	syscall
 	pop rcx
-	cmp rax, -1
-	je .read_error
 	mov QWORD PTR [rcx], rax
-	mov rax, 0
+	cmp rax, -1
+	xor rax, rax
+	sete al
 	ret
-.read_error:
-	mov QWORD PTR [rcx], 0
-	mov rax, 1
+
+.global open_syscall
+open_syscall:
+	mov rax, 2
+	syscall
 	ret
