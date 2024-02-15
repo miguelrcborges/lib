@@ -38,6 +38,18 @@ typedef struct {
 	u8 *offset;
 } ArenaState;
 
+typedef struct _PoolFreeList PoolFreeList;
+struct _PoolFreeList {
+	PoolFreeList *next;
+};
+
+typedef struct {
+	Arena arena;
+	PoolFreeList *free;
+	usize alloc_size;
+	usize alloc_alignment;
+} Pool;
+
 Arena Arena_create(FreeList *list);
 SafePointer Arena_alloc(Arena *a, usize size, usize alignment);
 ArenaState Arena_saveState(Arena *a);
@@ -46,5 +58,10 @@ void Arena_free(Arena *a);
 
 FreeList FreeList_create(usize block_len);
 bool FreeList_release(FreeList *list);
+
+Pool Pool_create(FreeList *list, usize alloc_size, usize alignment);
+SafePointer Pool_alloc(Pool *p);
+void Pool_free(Pool *p, void *item);
+void Pool_clear(Pool *p);
 
 #endif

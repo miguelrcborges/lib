@@ -143,3 +143,33 @@ bool FreeList_release(FreeList *list) {
 	list->last = NULL;
 	return r;
 }
+
+Pool Pool_create(FreeList *list, usize alloc_size, usize alignment) {
+	return (Pool) {
+		.arena = Arena_create(list),
+		.free = NULL,
+		.alloc_size = alloc_size,
+		.alloc_alignment = alignment,
+	};
+}
+
+SafePointer Pool_alloc(Pool *p) {
+	if (p->free != NULL) {
+		SafePointer r;
+		r._ptr = (void *)p->free;
+		p->free = p->free->next;
+		return r;
+	}
+	return Arena_alloc(&(p->arena), p->alloc_size, p->alloc_alignment);
+}
+
+void Pool_free(Pool *p, void *item) {
+	PoolFreeList *new = item;
+	new->next = p->free;
+	p->free = new;
+}
+
+void Pool_clear(Pool *p) {
+	Arena_free(&(p->arena));
+	p->free = NULL;
+}
