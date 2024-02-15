@@ -11,8 +11,8 @@ io_write:
 	mov rax, 1 
 	syscall
 	cmp rax, -1
-	xor rax, rax
 	sete al
+	movzx eax, al
 	ret
 
 .global io_close 
@@ -29,8 +29,8 @@ io_read:
 	pop rcx
 	mov QWORD PTR [rcx], rax
 	cmp rax, -1
-	xor rax, rax
 	sete al
+	movzx eax, al
 	ret
 
 .global open_syscall
