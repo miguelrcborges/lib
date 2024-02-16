@@ -3,6 +3,10 @@
 usize open_syscall(const u8 *name, i32 flags);
 
 bool io_open(string file, u32 mode, usize *fd) {
+	if (unlikely(mode >= IO_MODES_COUNT)) {
+		return 1;
+	}
+
 	static i32 flags_lookup[IO_MODES_COUNT] = {
 		[IO_READ]   = 0,
 		[IO_WRITE]  = 1001, 
