@@ -51,6 +51,13 @@ typedef struct {
 	void *_ptr;
 } SafePointer;
 
+static inline void *unwrap(SafePointer sp) {
+	if (sp._ptr == NULL) {
+		*(int*)sp._ptr;
+	}
+	return sp._ptr; 
+}
+
 #ifdef HIDE_ASSERT
 	#define assert(x) ((void)0)
 #elif __has_builtin(__builtin_unreachable)
