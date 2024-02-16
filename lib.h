@@ -18,6 +18,44 @@
   #define __has_feature(x) (0)
 #endif
 
+#ifdef HIDE_ASSERT
+	#define assert(x) ((void)0)
+#elif __has_builtin(__builtin_unreachable)
+	#define assert(x) ((x)?(void)0:__builtin_unreachable());
+#elif defined(_DEBUG)
+	#define assert(x) ((x)?(void)0:*(int*)0)
+#else
+	#define assert(x) ((void)0)
+#endif
+
+#if __has_builtin(__builtin_expect)
+	#define likely(expr) __builtin_expect(!!(expr), 1)
+	#define unlikely(expr) __builtin_expect(!!(expr), 0)
+#else 
+	#define likely(expr) (expr)
+	#define unlikely(expr) (expr)
+#endif
+
+#if __has_feature(c_static_assert)
+	#define static_assert(x, message) _Static_assert(x, message)
+#else
+	#define static_assert(x, message) assert(x)
+#endif
+
+#ifdef _WIN32
+	#define w32(t) __declspec(dllimport) t __stdcall
+#else
+	#define w32(t) t
+#endif
+
+#if defined(__GNUC__)
+    #define force_inline __attribute__((always_inline))
+#elif defined(_MSC_VER)
+    #define force_inline __forceinline
+#else
+    #define force_inline inline
+#endif
+
 #define len(a) (sizeof(a)/sizeof(*(a))
 #define min(a,b) (((a)<(b))?(a):(b))
 #define max(a,b) (((a)>(b))?(a):(b))
@@ -51,41 +89,11 @@ typedef struct {
 	void *_ptr;
 } SafePointer;
 
-static inline void *unwrap(SafePointer sp) {
-	if (sp._ptr == NULL) {
+static force_inline void *unwrap(SafePointer sp) {
+	if (unlikely(sp._ptr == NULL)) {
 		*(int*)sp._ptr;
 	}
 	return sp._ptr; 
 }
-
-#ifdef HIDE_ASSERT
-	#define assert(x) ((void)0)
-#elif __has_builtin(__builtin_unreachable)
-	#define assert(x) ((x)?(void)0:__builtin_unreachable());
-#elif defined(_DEBUG)
-	#define assert(x) ((x)?(void)0:*(int*)0)
-#else
-	#define assert(x) ((void)0)
-#endif
-
-#if __has_builtin(__builtin_expect)
-	#define likely(expr) __builtin_expect(!!(expr), 1)
-	#define unlikely(expr) __builtin_expect(!!(expr), 0)
-#else 
-	#define likely(expr) (expr)
-	#define unlikely(expr) (expr)
-#endif
-
-#if __has_feature(c_static_assert)
-	#define static_assert(x, message) _Static_assert(x, message)
-#else
-	#define static_assert(x, message) assert(x)
-#endif
-
-#ifdef _WIN32
-	#define w32(t) __declspec(dllimport) t __stdcall
-#else
-	#define w32(t) t
-#endif
 
 #endif /* LIB_H */
