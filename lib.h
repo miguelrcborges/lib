@@ -91,7 +91,7 @@ typedef struct {
 
 static force_inline void *unwrap(SafePointer sp) {
 	if (unlikely(sp._ptr == NULL)) {
-		*(int*)sp._ptr;
+		(void)*(int*)sp._ptr;
 	}
 	return sp._ptr; 
 }
