@@ -56,7 +56,7 @@
     #define force_inline inline
 #endif
 
-#define len(a) (sizeof(a)/sizeof(*(a))
+#define len(a) (sizeof(a)/sizeof(*(a)))
 #define min(a,b) (((a)<(b))?(a):(b))
 #define max(a,b) (((a)>(b))?(a):(b))
 #define clamp(a,x,b) (((x)<(a))?(a):((x)>(b))?(b):(x))
