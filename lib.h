@@ -96,4 +96,8 @@ static force_inline void *unwrap(SafePointer sp) {
 	return sp._ptr; 
 }
 
+#ifndef LIB_H_FREESTANDING
+	#include "_lib_hosted.h"
+#endif
+
 #endif /* LIB_H */
