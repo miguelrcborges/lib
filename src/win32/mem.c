@@ -26,13 +26,13 @@ SafePointer mem_rescommit(usize size) {
 }
 
 bool mem_commit(void *ptr, usize size) {
-	return (bool) (VirtualAlloc(ptr, size, MEM_COMMIT, 0x04) == NULL);
+	return (bool) (VirtualAlloc(ptr, size, MEM_COMMIT, PAGE_READWRITE) == NULL);
 }
 
 bool mem_decommit(void *ptr, usize size) {
-	return VirtualFree(ptr, size, MEM_DECOMMIT);
+	return !VirtualFree(ptr, size, MEM_DECOMMIT);
 }
 
 bool mem_release(void *ptr, usize size) {
-	return VirtualFree(ptr, size, MEM_DECOMMIT);
+	return !VirtualFree(ptr, 0, MEM_RELEASE);
 }
