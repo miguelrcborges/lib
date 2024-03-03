@@ -1,4 +1,4 @@
-#include "lib/mem.h"
+#include "lib.h"
 
 #if defined(__SANITIZE_ADDRESS__) || __has_feature(address_sanitizer)
   void __asan_poison_memory_region(void* addr, size_t size);

@@ -1,4 +1,4 @@
-#include "lib/io.h"
+#include "lib.h"
 
 w32(bool) WriteFile(usize fd, const u8 *buffer, u32 len, u32 *written, void *overlapped);
 w32(bool) ReadFile(usize fd, const u8 *buffer, u32 len, u32 *written, void *overlapped);

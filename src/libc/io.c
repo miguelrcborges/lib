@@ -1,4 +1,4 @@
-#include "lib/io.h"
+#include "lib.h"
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>

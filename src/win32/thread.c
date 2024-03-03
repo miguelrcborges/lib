@@ -1,4 +1,4 @@
-#include "lib/thread.h"
+#include "lib.h"
 
 w32(bool) TryAcquireSRWLockExclusive(Mutex *m);
 w32(void) AcquireSRWLockExclusive(Mutex *m);
