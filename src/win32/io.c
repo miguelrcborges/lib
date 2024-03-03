@@ -80,5 +80,7 @@ bool io_readFile(Arena *a, string file, string *content) {
 		return 1;
 	}
 
+	content->str = sp._ptr;
+	content->len = len;
 	return 0;
 }
