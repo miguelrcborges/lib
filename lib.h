@@ -181,6 +181,7 @@ SafePointer mem_rescommit(usize size);
 bool mem_commit(void *ptr, usize size);
 bool mem_decommit(void *ptr, usize size);
 bool mem_release(void *ptr, usize size);
+void mem_copy(void *restrict dest, void *restrict orig, usize len);
 Arena Arena_create(FreeList *list);
 SafePointer Arena_alloc(Arena *a, usize size, usize alignment);
 ArenaState Arena_saveState(Arena *a);
@@ -192,6 +193,11 @@ Pool Pool_create(FreeList *list, usize alloc_size, usize alignment);
 SafePointer Pool_alloc(Pool *p);
 void Pool_free(Pool *p, void *item);
 void Pool_clear(Pool *p);
+
+
+/* string.c */
+bool string_equal(string s1, string s2);
+i8 string_compare(string s1, string s2);
 
 
 /* thread.c */

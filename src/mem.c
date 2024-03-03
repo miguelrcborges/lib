@@ -173,3 +173,18 @@ void Pool_clear(Pool *p) {
 	Arena_free(&(p->arena));
 	p->free = NULL;
 }
+
+void mem_copy(void *restrict dest, void *restrict orig, usize len) {
+	u8 *d = dest;
+	u8 *o = orig;
+	if (d > o) {
+		do {
+			--len;
+			d[len] = o[len];
+		} while (len);
+	} else {
+		for (usize i = 0; i < len; ++i) {
+			d[i] = o[i];
+		}
+	}
+}
