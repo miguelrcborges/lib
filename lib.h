@@ -112,9 +112,9 @@ enum IO_OPEN_MODES {
 
 #if defined(LIBC_BACKEND)
 	#include <stdio.h>
-	#define getStdIn() ((usize)stdin)
-	#define getStdOut() ((usize)stdout)
-	#define getStdErr() ((usize)stderr)
+	#define getStdIn() ((usize)(stdin))
+	#define getStdOut() ((usize)(stdout))
+	#define getStdErr() ((usize)(stderr))
 #elif defined(_WIN32)
 	w32(u32) GetStdHandle(u32 nhandle);
 	#define getStdIn() (GetStdHandle((u32)-10))

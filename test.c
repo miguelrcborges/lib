@@ -1,15 +1,15 @@
 #include "lib.h"
 
-static usize stderr;
-static usize stdout;
+static usize stdErr;
+static usize stdOut;
 static usize test_count;
 static usize test_failed;
 
 #define TEST(test, name) do { \
 	test_count++; \
 	if (test) {  \
-		io_write(stderr, string("FAILED: ")); \
-		io_write(stderr, string(name"\n")); \
+		io_write(stdErr, string("FAILED: ")); \
+		io_write(stdErr, string(name"\n")); \
 		test_failed++; \
 	} \
 } while (0)
@@ -22,8 +22,8 @@ mainCRTStartup()
 main()
 #endif
 {
-	stdout = getStdOut();
-	stderr = getStdErr();
+	stdOut = getStdOut();
+	stdErr = getStdErr();
 	Arena a = Arena_create(0);
 
 	string tmp;
@@ -59,6 +59,6 @@ main()
 	a(string("/")); a(executed); a(string(" tests passed.\n"));
 #undef a
 	StringBuilder_build(&sb, &a, &output);
-	io_write(stdout, output);
+	io_write(stdOut, output);
 	return test_failed;
 }
