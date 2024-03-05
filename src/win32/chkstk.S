@@ -1,9 +1,9 @@
 // https://github.com/skeeto/w64devkit/blob/master/src/libchkstk.S
 #if __amd64
-#  if CHKSTK_MS || defined(__clang__)
+#  if defined(__GNUC__)
 	.globl ___chkstk_ms
 ___chkstk_ms:
-#  elif CHKSTK
+#  else 
 	.globl __chkstk
 __chkstk:
 #  endif
@@ -24,8 +24,7 @@ __chkstk:
 #endif  // __amd64
 
 #if __i386
-#  if CHKSTK_MS
-// Behaves exactly like x64 ___chkstk_ms.
+#  if defined(__GNUC__)
 	.globl ___chkstk_ms
 ___chkstk_ms:
 	push %eax
@@ -42,9 +41,7 @@ ___chkstk_ms:
 	pop  %ecx
 	pop  %eax
 	ret
-#  elif CHKSTK
-// On x86, __chkstk allocates the new stack frame. This implementation
-// clobbers eax. MSVC only seems to care about ebp and ecx (this).
+#  else 
 	.globl __chkstk
 __chkstk:
 	push %ecx		// preserve ecx
