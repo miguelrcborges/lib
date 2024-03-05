@@ -109,7 +109,7 @@ bool StringBuilder_build(StringBuilder *sb, Arena *a, string *out) {
 	if (unlikely(sb->n_nodes == 0))
 		return 0;
 
-	SafePointer sp = Arena_alloc(a, sb->str_len + 1, sizeof(void*));
+	SafePointer sp = Arena_alloc(a, sb->str_len + 1, 1);
 	if (sp._ptr == NULL)
 		return 1;
 

@@ -26,9 +26,9 @@ bool io_open(string file, u32 mode, usize *fd) {
 	}
 
 	static char *mode_lookup[IO_MODES_COUNT] = {
-		[IO_READ]   = "rb+",
-		[IO_WRITE]  = "wb+", 
-		[IO_APPEND] = "ab+",
+		[IO_READ]   = "rb",
+		[IO_WRITE]  = "wb", 
+		[IO_APPEND] = "ab",
 	};
 
 	if (likely(file.str[file.len] == '\0')) {
@@ -48,4 +48,32 @@ bool io_open(string file, u32 mode, usize *fd) {
 
 bool io_close(usize fd) {
 	return fclose((FILE *)fd);
+}
+
+bool io_readFile(Arena *a, string file, string *content) {
+	FILE *f;
+	if (likely(file.str[file.len] == '\0')) {
+		f = fopen((char *)file.str, "rb");
+	} else {
+		char zeroed[32768];
+		memcpy(zeroed, file.str, file.len);
+		zeroed[file.len] = '\0';
+		f = fopen(zeroed, "rb");
+	}
+
+	if (unlikely(f == NULL))
+		return 1;
+
+	fseek(f, 0, SEEK_END);
+	usize len = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	SafePointer sp = Arena_alloc(a, len, 1);
+	if (sp._ptr == NULL)
+		return 1;
+	content->str = sp._ptr;
+	content->len = len;
+	fread(sp._ptr, 1, len, f);
+
+	return 0;
 }
