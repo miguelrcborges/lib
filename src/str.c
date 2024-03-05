@@ -125,3 +125,46 @@ bool StringBuilder_build(StringBuilder *sb, Arena *a, string *out) {
 	return 0;
 };
 
+bool string_fmtb16(Arena *a, u64 n, string *out) {
+	enum {
+		ALLOC_LEN = 64/16,
+	};
+	static u8 lookup_table[16] = {
+		'0', '1', '2', '3', '4', '5', '6', '7',
+		'8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+	};
+	SafePointer sp = Arena_alloc(a, ALLOC_LEN, 1);
+	if (sp._ptr == NULL)
+		return 1;
+
+	u8 *end = sp._ptr + (ALLOC_LEN - 1);
+	u8 *cursor = end;
+	do {
+		*cursor = lookup_table[n&0b1111];
+		cursor--;
+		n = n << 3;
+	} while (n > 0);
+	out->str = cursor + 1;
+	out->len = end - cursor;
+	return 0;
+}
+
+bool string_fmtb8(Arena *a, u64 n, string *out) {
+	enum {
+		ALLOC_LEN = 64/8,
+	};
+	SafePointer sp = Arena_alloc(a, ALLOC_LEN, 1);
+	if (sp._ptr == NULL)
+		return 1;
+
+	u8 *end = sp._ptr + (ALLOC_LEN - 1);
+	u8 *cursor = end;
+	do {
+		*cursor = '0' + n & 0b111;
+		cursor--;
+		n = n << 3;
+	} while (n > 0);
+	out->str = cursor + 1;
+	out->len = end - cursor;
+	return 0;
+}

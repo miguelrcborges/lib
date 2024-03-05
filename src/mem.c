@@ -32,7 +32,7 @@ SafePointer Arena_alloc(Arena *a, usize size, usize alignment) {
 	if (likely(a->current != NULL)) {
 		usize left_pad = (alignment - ((uptr) a->current->offset & (alignment - 1))) & (alignment - 1);
 		if (unlikely(a->current->end - a->current->offset < size + left_pad)) {
-			if (a->free->first == NULL || a->free->block_len > maxoff) {
+			if (a->free->first == NULL || a->free->block_len < maxoff) {
 				usize asize = max(maxoff, a->free->block_len);
 				SafePointer p = mem_rescommit(asize);
 				if (p._ptr == NULL) {
@@ -46,10 +46,12 @@ SafePointer Arena_alloc(Arena *a, usize size, usize alignment) {
 			} else {
 				a->current->next = a->free->first;
 				a->current = a->current->next;
+				a->free->first = a->free->first->next;
+				a->current->next = 0;
 			}
 		}
 	} else {
-		if (a->free->first == NULL || a->free->block_len > maxoff) {
+		if (a->free->first == NULL || a->free->block_len < maxoff) {
 			usize asize = max(maxoff, a->free->block_len);
 			SafePointer p = mem_rescommit(asize);
 			if (p._ptr == NULL) {
@@ -63,6 +65,7 @@ SafePointer Arena_alloc(Arena *a, usize size, usize alignment) {
 		} else {
 			a->current = a->free->first;
 			a->free->first = a->free->first->next;
+			a->current->next = 0;
 		}
 	} 
 	usize left_pad = (alignment - ((uptr) a->current->offset & (alignment - 1))) & (alignment - 1);
@@ -87,19 +90,22 @@ void Arena_rollback(ArenaState s) {
 	s.arena->current->offset = s.offset;
 	dptr free = s.arena->current->end - s.arena->current->offset;
 	__asan_poison_memory_region(s.arena->current->offset, free); 
-	for (ArenaBlock *p = s.current->next; p != NULL; p = p->next) {
-		u8 *base = (u8 *)p + sizeof(ArenaBlock);
-		dptr free = p->end - base;
-		p->offset = base;
-		__asan_poison_memory_region(base, free); 
-	}
-	if (s.arena->free->first == NULL) {
-		s.arena->free->first = s.arena->current->next;
-		s.arena->free->last = s.arena->free->first;
-	} else {
-		s.arena->free->last->next = s.arena->current->next;
-	}
-	s.arena->current->next = NULL;
+	if (s.current->next) {
+		for (ArenaBlock *p = s.current->next; p != NULL; p = p->next) {
+			u8 *base = (u8 *)p + sizeof(ArenaBlock);
+			dptr free = p->end - base;
+			p->offset = base;
+			__asan_poison_memory_region(base, free); 
+		}
+		if (s.arena->free->first == NULL) {
+			s.arena->free->first = s.arena->current->next;
+			s.arena->free->last = s.arena->free->first;
+		} else {
+			s.current->next->next = s.arena->free->first;
+			s.arena->free->first = s.current->next;
+			s.arena->current->next = 0;
+		}
+	}	
 }
 
 void Arena_free(Arena *a) {
@@ -113,7 +119,8 @@ void Arena_free(Arena *a) {
 		a->free->first = a->current;
 		a->free->last = a->free->first;
 	} else {
-		a->free->last->next = a->current;
+		a->current->next = a->free->first;
+		a->free->first = a->first;
 	}
 	a->first = NULL;
 	a->current= NULL;

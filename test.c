@@ -47,6 +47,18 @@ main()
 	TEST(!string_compare(string("18446744073709551615"), tmp), "Unsigned number formatting #3");
 	Arena_free(&a);
 
+	string_fmtb16(&a, 0, &tmp);
+	TEST(!string_compare(string("0"), tmp), "Base16 formatting #1");
+	string_fmtb16(&a, -1, &tmp);
+	TEST(!string_compare(string("ffffffff"), tmp), "Base16 formatting #2");
+	Arena_free(&a);
+
+	string_fmtb8(&a, 0, &tmp);
+	TEST(!string_compare(string("0"), tmp), "Base8 formatting #1");
+	string_fmtb8(&a, -1, &tmp);
+	TEST(!string_compare(string("7777777777777777"), tmp), "Base8 formatting #2");
+	Arena_free(&a);
+
 
 	StringBuilder sb;
 	string passed;
