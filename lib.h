@@ -9,6 +9,7 @@
 #define STRINGIFY(S) STRINGIFY_(S)
 #define GLUE_(A,B) A##B
 #define GLUE(A,B) GLUE_(A,B)
+#define EXPAND(x) x
 
 #ifndef __has_builtin
 	#define __has_builtin(X) (0)
@@ -167,6 +168,20 @@ typedef struct {
 } Mutex;
 
 
+typedef struct stringNode StringNode;
+struct stringNode {
+	StringNode *next;
+	string string;
+};
+
+typedef struct {
+	StringNode *first;
+	StringNode *last;
+	usize n_nodes;
+	usize str_len;
+} StringBuilder;
+
+
 /* io.c */
 bool io_write(usize fd, string s);
 bool io_read(usize fd, u8 *buff, usize len, usize *written);
@@ -198,6 +213,11 @@ void Pool_clear(Pool *p);
 /* string.c */
 bool string_equal(string s1, string s2);
 i8 string_compare(string s1, string s2);
+bool string_fmtu64(Arena *a, u64 n, string *out);
+bool string_fmti64(Arena *a, i64 n, string *out);
+bool StringBuilder_create(StringBuilder *sb, Arena *a, string start);
+bool StringBuilder_append(StringBuilder *sb, Arena *a, string s);
+bool StringBuilder_build(StringBuilder *sb, Arena *a, string *out);
 
 
 /* thread.c */

@@ -1,6 +1,6 @@
 // https://github.com/skeeto/w64devkit/blob/master/src/libchkstk.S
 #if __amd64
-#  if CHKSTK_MS
+#  if CHKSTK_MS || defined(__clang__)
 	.globl ___chkstk_ms
 ___chkstk_ms:
 #  elif CHKSTK
