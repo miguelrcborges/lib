@@ -59,6 +59,8 @@ main()
 	TEST(!string_compare(string("7777777777777777"), tmp), "Base8 formatting #2");
 	Arena_free(&a);
 
+	TEST(!string_compare(string_build(&a, string("Hello,"), string(" world!"), string("\n")), string("Hello, world!\n")), "Variadic String Building");
+
 
 	StringBuilder sb;
 	string passed;

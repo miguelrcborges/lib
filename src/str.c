@@ -1,4 +1,5 @@
 #include "lib.h"
+#include <stdarg.h>
 
 bool string_equal(string s1, string s2) {
 	if (s1.len != s2.len)
@@ -127,7 +128,7 @@ bool StringBuilder_build(StringBuilder *sb, Arena *a, string *out) {
 
 bool string_fmtb16(Arena *a, u64 n, string *out) {
 	enum {
-		ALLOC_LEN = 64/16,
+		ALLOC_LEN = 64/4,
 	};
 	static u8 lookup_table[16] = {
 		'0', '1', '2', '3', '4', '5', '6', '7',
@@ -151,7 +152,7 @@ bool string_fmtb16(Arena *a, u64 n, string *out) {
 
 bool string_fmtb8(Arena *a, u64 n, string *out) {
 	enum {
-		ALLOC_LEN = 64/8,
+		ALLOC_LEN = 64/3,
 	};
 	SafePointer sp = Arena_alloc(a, ALLOC_LEN, 1);
 	if (sp._ptr == NULL)
@@ -167,4 +168,32 @@ bool string_fmtb8(Arena *a, u64 n, string *out) {
 	out->str = cursor + 1;
 	out->len = end - cursor;
 	return 0;
+}
+
+string _string_build(Arena *a, usize n, ...) {
+	usize len = 1;
+	va_list args;
+	va_start(args, n);
+	for (usize i = 0; i < n; ++i) {
+		len += va_arg(args, string).len;
+	}
+	va_end(args);
+
+	string output;
+	output.str = unwrap(Arena_alloc(a, len, 1));
+	output.len = len;
+	u8 *writter = (u8 *)output.str;
+
+	va_start(args, n);
+	for (usize i = 0; i < n; ++i) {
+		string t = va_arg(args, string);
+		for (usize ii = 0; ii < t.len; ++ii) {
+			*writter = t.str[ii];
+			writter++;
+		}
+	}
+	va_end(args);
+	*writter = '\0';
+
+	return output;
 }

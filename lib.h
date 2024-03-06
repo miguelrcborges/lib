@@ -220,7 +220,8 @@ bool string_fmtb8(Arena *a, u64 n, string *out);
 bool StringBuilder_create(StringBuilder *sb, Arena *a, string start);
 bool StringBuilder_append(StringBuilder *sb, Arena *a, string s);
 bool StringBuilder_build(StringBuilder *sb, Arena *a, string *out);
-
+string _string_build(Arena *a, usize n, ...);
+#define string_build(a, ...) _string_build(a, sizeof((string[]){__VA_ARGS__})/sizeof(string), __VA_ARGS__)
 
 /* thread.c */
 Mutex Mutex_create(void);

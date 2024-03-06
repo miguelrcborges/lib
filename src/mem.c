@@ -51,7 +51,7 @@ SafePointer Arena_alloc(Arena *a, usize size, usize alignment) {
 			}
 		}
 	} else {
-		if (a->free->first == NULL || a->free->block_len < maxoff) {
+		if (unlikely(a->free->first == NULL || a->free->block_len < maxoff)) {
 			usize asize = max(maxoff, a->free->block_len);
 			SafePointer p = mem_rescommit(asize);
 			if (p._ptr == NULL) {
@@ -64,6 +64,7 @@ SafePointer Arena_alloc(Arena *a, usize size, usize alignment) {
 			__asan_poison_memory_region(a->current->offset, asize - sizeof(ArenaBlock));
 		} else {
 			a->current = a->free->first;
+			a->first = a->current;
 			a->free->first = a->free->first->next;
 			a->current->next = 0;
 		}
