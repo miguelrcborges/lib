@@ -13,9 +13,12 @@ bool string_equal(string s1, string s2) {
 }
 
 i8 string_compare(string pos, string neg) {
-	bool longer;
+	i8 longer;
 	usize limit;
-	if (pos.len > neg.len) {
+	if (pos.len == neg.len) {
+		longer = 0;
+		limit = neg.len;
+	} else if (pos.len > neg.len) {
 		longer = 1;
 		limit = neg.len;
 	} else {
@@ -25,6 +28,8 @@ i8 string_compare(string pos, string neg) {
 
 	for (usize i = 0; i < limit; ++i)
 		if (pos.str[i] != neg.str[i])
+			// May need to change this later.
+			// This wont work properly if values >= 128
 			return pos.str[i] - neg.str[i];
 
 	return longer;
@@ -54,19 +59,23 @@ bool string_fmti64(Arena *a, i64 n, string *out) {
 	if (sp._ptr == NULL)
 		return 1;
 
+	u64 n2;
+	bool is_neg;
 	u8 *end = sp._ptr + 19;
 	u8 *cursor = end;
-	bool is_neg = 0;
 	if (n < 0) {
 		is_neg = 1;
-		n = -n;
+		n2 = -n;
+	} else {
+		is_neg = 0;
+		n2 = n;
 	}
 	
 	do {
-		*cursor = '0' + n % 10;
+		*cursor = '0' + n2 % 10;
 		cursor--;
-		n /= 10;
-	} while (n > 0);
+		n2 /= 10;
+	} while (n2 > 0);
 	if (is_neg) {
 		*cursor = '-';
 		cursor--;
@@ -85,7 +94,6 @@ bool StringBuilder_create(StringBuilder *sb, Arena *a, string start) {
 	n->string = start;
 	n->next = NULL;
 	sb->str_len = start.len;
-	sb->n_nodes = 1;
 	sb->first = n;
 	sb->last = n;
 	return 0;
@@ -100,14 +108,13 @@ bool StringBuilder_append(StringBuilder *sb, Arena *a, string s) {
 	n->next = NULL;
 	n->string = s;
 	sb->str_len += s.len;
-	sb->n_nodes += 1;
 	sb->last->next = n;
 	sb->last = sb->last->next;
 	return 0;
 }
 
 bool StringBuilder_build(StringBuilder *sb, Arena *a, string *out) {
-	if (unlikely(sb->n_nodes == 0))
+	if (unlikely(sb->str_len == 0))
 		return 0;
 
 	SafePointer sp = Arena_alloc(a, sb->str_len + 1, 1);
@@ -143,7 +150,7 @@ bool string_fmtb16(Arena *a, u64 n, string *out) {
 	do {
 		*cursor = lookup_table[n&0b1111];
 		cursor--;
-		n = n << 3;
+		n = n >> 4;
 	} while (n > 0);
 	out->str = cursor + 1;
 	out->len = end - cursor;
@@ -161,9 +168,9 @@ bool string_fmtb8(Arena *a, u64 n, string *out) {
 	u8 *end = sp._ptr + (ALLOC_LEN - 1);
 	u8 *cursor = end;
 	do {
-		*cursor = '0' + n & 0b111;
+		*cursor = '0' + (n & 0b111);
 		cursor--;
-		n = n << 3;
+		n = n >> 3;
 	} while (n > 0);
 	out->str = cursor + 1;
 	out->len = end - cursor;
@@ -181,7 +188,7 @@ string _string_build(Arena *a, usize n, ...) {
 
 	string output;
 	output.str = unwrap(Arena_alloc(a, len, 1));
-	output.len = len;
+	output.len = len - 1;
 	u8 *writter = (u8 *)output.str;
 
 	va_start(args, n);

@@ -177,7 +177,6 @@ struct stringNode {
 typedef struct {
 	StringNode *first;
 	StringNode *last;
-	usize n_nodes;
 	usize str_len;
 } StringBuilder;
 
