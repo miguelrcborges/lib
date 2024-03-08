@@ -63,17 +63,20 @@ bool io_readFile(Arena *a, string file, string *content) {
 	ArenaState as = Arena_saveState(a);
 	SafePointer sp = Arena_alloc(a, len, 1);
 	if (unlikely(sp._ptr == NULL)) {
+		CloseHandle(fd);
 		return 1;
 	}
 	void *p = sp._ptr;
 
 	// As it is, it can only be read 4 GB on one go.
 	if (unlikely(len >= ((usize)1 << 32))) {
+		CloseHandle(fd);
 		return 1;
 	}
 
 	u32 read;
-	bool ret = ReadFile(fd, p, len, &read, NULL);
+	bool ret = !ReadFile(fd, p, len, &read, NULL);
+	CloseHandle(fd);
 
 	if (unlikely(ret || read != len)) {
 		Arena_rollback(as);

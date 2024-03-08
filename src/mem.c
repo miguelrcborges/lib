@@ -87,6 +87,9 @@ ArenaState Arena_saveState(Arena *a) {
 }
 
 void Arena_rollback(ArenaState s) {
+	if (unlikely(s.current == NULL))
+		return Arena_free(s.arena);
+		
 	s.arena->current = s.current;
 	s.arena->current->offset = s.offset;
 	dptr free = s.arena->current->end - s.arena->current->offset;
@@ -110,6 +113,9 @@ void Arena_rollback(ArenaState s) {
 }
 
 void Arena_free(Arena *a) {
+	if (unlikely(a->current == NULL)) {
+		return;
+	}
 	for (ArenaBlock *p = a->first; p != NULL; p = p->next) {
 		u8 *base = (u8 *)p + sizeof(ArenaBlock);
 		dptr free = p->end - base;
