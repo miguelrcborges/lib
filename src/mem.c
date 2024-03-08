@@ -12,7 +12,6 @@
 
 static FreeList defaultFreeList = {
 	.first = NULL,
-	.last = NULL,
 	.block_len = 4096
 };
 
@@ -103,7 +102,6 @@ void Arena_rollback(ArenaState s) {
 		}
 		if (s.arena->free->first == NULL) {
 			s.arena->free->first = s.arena->current->next;
-			s.arena->free->last = s.arena->free->first;
 		} else {
 			s.current->next->next = s.arena->free->first;
 			s.arena->free->first = s.current->next;
@@ -124,7 +122,6 @@ void Arena_free(Arena *a) {
 	}
 	if (a->free->first == NULL) {
 		a->free->first = a->current;
-		a->free->last = a->free->first;
 	} else {
 		a->current->next = a->free->first;
 		a->free->first = a->first;
@@ -136,7 +133,6 @@ void Arena_free(Arena *a) {
 FreeList FreeList_create(usize block_len) {
 	return (FreeList) {
 		.first = NULL,
-		.last = NULL,
 		.block_len = block_len
 	};
 }
@@ -154,7 +150,6 @@ bool FreeList_release(FreeList *list) {
 			return r;
 		}
 	}
-	list->last = NULL;
 	return r;
 }
 

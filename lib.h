@@ -135,7 +135,6 @@ struct arenaBlock {
 
 typedef struct {
 	ArenaBlock *first;
-	ArenaBlock *last;
 	usize block_len;
 } FreeList;
 
