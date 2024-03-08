@@ -82,7 +82,7 @@ ArenaState Arena_saveState(Arena *a) {
 	return (ArenaState) {
 		.arena = a,
 		.current = a->current,
-		.offset = a->current->offset
+		.offset = a->current ? a->current->offset : NULL
 	};
 }
 
