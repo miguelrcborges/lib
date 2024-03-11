@@ -84,11 +84,15 @@ typedef struct {
 	const u8 *str;
 	usize len;
 } string;
-#define string(s) (string){(u8*)s, sizeof(s)-1}
+#define str(s) (string){(u8*)s, sizeof(s)-1}
 
 typedef struct {
 	void *_ptr;
 } SafePointer;
+
+typedef struct {
+	string (*err)(void);
+} GenericError;
 
 static force_inline void *unwrap(SafePointer sp) {
 	if (unlikely(sp._ptr == NULL)) {
@@ -184,12 +188,21 @@ typedef struct {
 /* io.c */
 bool io_write(usize fd, string s);
 bool io_read(usize fd, u8 *buff, usize len, usize *written);
-bool io_open(string file, u32 mode, usize *fd);
+typedef struct {
+	GenericError err;
+	usize fd;
+} io_open_result;
+io_open_result io_open(string file, u32 mode);
 bool io_close(usize fd);
-bool io_readFile(Arena *a, string file, string *content);
+typedef struct {
+	GenericError err;
+	string s;
+} io_readFile_result;
+io_readFile_result io_readFile(Arena *a, string file);
 
 
 /* mem.c */ 
+string errFailedToAllocate(void);
 SafePointer mem_reserve(usize size);
 SafePointer mem_rescommit(usize size);
 bool mem_commit(void *ptr, usize size);
@@ -212,14 +225,18 @@ void Pool_clear(Pool *p);
 /* str.c */
 bool string_equal(string s1, string s2);
 i8 string_compare(string s1, string s2);
-bool string_fmtu64(Arena *a, u64 n, string *out);
-bool string_fmti64(Arena *a, i64 n, string *out);
-bool string_fmtb16(Arena *a, u64 n, string *out);
-bool string_fmtb8(Arena *a, u64 n, string *out);
+typedef struct {
+	GenericError err;
+	string s;
+} string_format_result;
+string_format_result string_fmtu64(Arena *a, u64 n);
+string_format_result string_fmti64(Arena *a, i64 n);
+string_format_result string_fmtb16(Arena *a, u64 n);
+string_format_result string_fmtb8(Arena *a, u64 n);
 bool StringBuilder_create(StringBuilder *sb, Arena *a, string start);
 bool StringBuilder_append(StringBuilder *sb, Arena *a, string s);
-bool StringBuilder_build(StringBuilder *sb, Arena *a, string *out);
-string _string_build(Arena *a, usize n, ...);
+string_format_result StringBuilder_build(StringBuilder *sb, Arena *a);
+string_format_result _string_build(Arena *a, usize n, ...);
 #define string_build(a, ...) _string_build(a, sizeof((string[]){__VA_ARGS__})/sizeof(string), __VA_ARGS__)
 
 /* thread.c */

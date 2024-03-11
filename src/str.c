@@ -35,11 +35,14 @@ i8 string_compare(string pos, string neg) {
 	return longer;
 }
 
-bool string_fmtu64(Arena *a, u64 n, string *out) {
+string_format_result string_fmtu64(Arena *a, u64 n) {
+	string_format_result ret;
 	// Max u64 is 18446744073709551615 : 20 characters
 	SafePointer sp = Arena_alloc(a, 20, 1);
-	if (sp._ptr == NULL)
-		return 1;
+	if (unlikely(sp._ptr == NULL)) {
+		ret.err.err = errFailedToAllocate;
+		return ret;
+	}
 
 	u8 *end = sp._ptr + 19;
 	u8 *cursor = end;
@@ -48,16 +51,20 @@ bool string_fmtu64(Arena *a, u64 n, string *out) {
 		cursor--;
 		n /= 10;
 	} while (n > 0);
-	out->str = cursor + 1;
-	out->len = end - cursor;
-	return 0;
+	ret.err.err = NULL;
+	ret.s.str = cursor + 1;
+	ret.s.len = end - cursor;
+	return ret;
 }
 
-bool string_fmti64(Arena *a, i64 n, string *out) {
+string_format_result string_fmti64(Arena *a, i64 n) {
+	string_format_result ret;
 	// Widest i64 is -9223372036854775808 : 20 characters
 	SafePointer sp = Arena_alloc(a, 20, 1);
-	if (sp._ptr == NULL)
-		return 1;
+	if (unlikely(sp._ptr == NULL)) {
+		ret.err.err = errFailedToAllocate;
+		return ret;
+	}
 
 	u64 n2;
 	bool is_neg;
@@ -80,14 +87,15 @@ bool string_fmti64(Arena *a, i64 n, string *out) {
 		*cursor = '-';
 		cursor--;
 	}
-	out->str = cursor + 1;
-	out->len = end - cursor;
-	return 0;
+	ret.err.err = NULL;
+	ret.s.str = cursor + 1;
+	ret.s.len = end - cursor;
+	return ret;
 }
 
 bool StringBuilder_create(StringBuilder *sb, Arena *a, string start) {
 	SafePointer sp = Arena_alloc(a, sizeof(StringNode), sizeof(void*));
-	if (sp._ptr == NULL)
+	if (unlikely(sp._ptr == NULL))
 		return 1;
 
 	StringNode *n = sp._ptr;
@@ -101,7 +109,7 @@ bool StringBuilder_create(StringBuilder *sb, Arena *a, string start) {
 
 bool StringBuilder_append(StringBuilder *sb, Arena *a, string s) {
 	SafePointer sp = Arena_alloc(a, sizeof(StringNode), sizeof(void*));
-	if (sp._ptr == NULL)
+	if (unlikely(sp._ptr == NULL))
 		return 1;
 
 	StringNode *n = sp._ptr;
@@ -113,27 +121,31 @@ bool StringBuilder_append(StringBuilder *sb, Arena *a, string s) {
 	return 0;
 }
 
-bool StringBuilder_build(StringBuilder *sb, Arena *a, string *out) {
-	if (unlikely(sb->str_len == 0))
-		return 0;
+string_format_result StringBuilder_build(StringBuilder *sb, Arena *a) {
+	string_format_result ret;
+	if (unlikely(sb->str_len == 0)) {
+		ret.err.err = NULL;
+		ret.s = str("");
+	}
 
 	SafePointer sp = Arena_alloc(a, sb->str_len + 1, 1);
-	if (sp._ptr == NULL)
-		return 1;
+	if (unlikely(sp._ptr == NULL))
+		return ret;
 
 	u8 *cursor = sp._ptr;
-	out->str = cursor;
-	out->len = sb->str_len;
+	ret.s.str = cursor;
+	ret.s.len = sb->str_len;
 	for (StringNode *n = sb->first; n; n = n->next) {
 		for (usize i = 0; i < n->string.len; ++i) {
 			*cursor = n->string.str[i];
 			++cursor;
 		}
 	}
-	return 0;
+	return ret;
 };
 
-bool string_fmtb16(Arena *a, u64 n, string *out) {
+string_format_result string_fmtb16(Arena *a, u64 n) {
+	string_format_result ret;
 	enum {
 		ALLOC_LEN = 64/4,
 	};
@@ -142,8 +154,10 @@ bool string_fmtb16(Arena *a, u64 n, string *out) {
 		'8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
 	};
 	SafePointer sp = Arena_alloc(a, ALLOC_LEN, 1);
-	if (sp._ptr == NULL)
-		return 1;
+	if (unlikely(sp._ptr == NULL)) {
+		ret.err.err = errFailedToAllocate;
+		return ret;
+	}
 
 	u8 *end = sp._ptr + (ALLOC_LEN - 1);
 	u8 *cursor = end;
@@ -152,18 +166,22 @@ bool string_fmtb16(Arena *a, u64 n, string *out) {
 		cursor--;
 		n = n >> 4;
 	} while (n > 0);
-	out->str = cursor + 1;
-	out->len = end - cursor;
-	return 0;
+	ret.err.err = NULL;
+	ret.s.str = cursor + 1;
+	ret.s.len = end - cursor;
+	return ret;
 }
 
-bool string_fmtb8(Arena *a, u64 n, string *out) {
+string_format_result string_fmtb8(Arena *a, u64 n) {
+	string_format_result ret;
 	enum {
 		ALLOC_LEN = 64/3,
 	};
 	SafePointer sp = Arena_alloc(a, ALLOC_LEN, 1);
-	if (sp._ptr == NULL)
-		return 1;
+	if (unlikely(sp._ptr == NULL)) {
+		ret.err.err = errFailedToAllocate;
+		return ret;
+	}
 
 	u8 *end = sp._ptr + (ALLOC_LEN - 1);
 	u8 *cursor = end;
@@ -172,12 +190,15 @@ bool string_fmtb8(Arena *a, u64 n, string *out) {
 		cursor--;
 		n = n >> 3;
 	} while (n > 0);
-	out->str = cursor + 1;
-	out->len = end - cursor;
-	return 0;
+	ret.err.err = NULL;
+	ret.s.str = cursor + 1;
+	ret.s.len = end - cursor;
+	return ret;
 }
 
-string _string_build(Arena *a, usize n, ...) {
+string_format_result _string_build(Arena *a, usize n, ...) {
+	string_format_result ret;
+
 	usize len = 1;
 	va_list args;
 	va_start(args, n);
@@ -186,10 +207,14 @@ string _string_build(Arena *a, usize n, ...) {
 	}
 	va_end(args);
 
-	string output;
-	output.str = unwrap(Arena_alloc(a, len, 1));
-	output.len = len - 1;
-	u8 *writter = (u8 *)output.str;
+	SafePointer sp = Arena_alloc(a, len, 1);
+	if (unlikely(sp._ptr == NULL)) {
+		ret.err.err = errFailedToAllocate;
+		return ret;
+	}
+	ret.s.str = sp._ptr;
+	ret.s.len = len - 1;
+	u8 *writter = sp._ptr;
 
 	va_start(args, n);
 	for (usize i = 0; i < n; ++i) {
@@ -202,5 +227,5 @@ string _string_build(Arena *a, usize n, ...) {
 	va_end(args);
 	*writter = '\0';
 
-	return output;
+	return ret;
 }

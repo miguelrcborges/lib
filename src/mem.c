@@ -16,6 +16,11 @@ static FreeList defaultFreeList = {
 	.block_len = 4096
 };
 
+string errFailedToAllocate(void) {
+	return str("Not enough free memory.");
+}
+
+
 Arena Arena_create(FreeList *list) {
 	if (list == NULL) {
 		list = &defaultFreeList;
