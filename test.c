@@ -1,3 +1,4 @@
+
 #include "lib.h"
 
 static usize stdErr;
@@ -26,34 +27,34 @@ main()
 	stdErr = getStdErr();
 	Arena a = Arena_create(0);
 
-	TEST(string_equal(str("0"), string_fmti64(&a, 0).s), "Signed number formatting #1");
-	TEST(string_equal(str("-21"), string_fmti64(&a, -21).s), "Signed number formatting #2");
-	TEST(string_equal(str("42"), string_fmti64(&a, 42).s), "Signed number formatting #3");
-	TEST(string_equal(str("9223372036854775807"), string_fmti64(&a, 9223372036854775807).s), "Signed number formatting #4");
-	TEST(string_equal(str("-9223372036854775808"), string_fmti64(&a, -9223372036854775808u).s), "Signed number formatting #5");
+	TEST(string_equal(str("0"), string_fmti64(&a, 0)), "Signed number formatting #1");
+	TEST(string_equal(str("-21"), string_fmti64(&a, -21)), "Signed number formatting #2");
+	TEST(string_equal(str("42"), string_fmti64(&a, 42)), "Signed number formatting #3");
+	TEST(string_equal(str("9223372036854775807"), string_fmti64(&a, 9223372036854775807)), "Signed number formatting #4");
+	TEST(string_equal(str("-9223372036854775808"), string_fmti64(&a, -9223372036854775808u)), "Signed number formatting #5");
 	Arena_free(&a);
 
-	TEST(string_equal(str("0"), string_fmtu64(&a, 0).s), "Unsigned number formatting #1");
-	TEST(string_equal(str("42"), string_fmtu64(&a, 42).s), "Unsigned number formatting #2");
-	TEST(string_equal(str("18446744073709551615"), string_fmtu64(&a, 18446744073709551615u).s), "Unsigned number formatting #3");
+	TEST(string_equal(str("0"), string_fmtu64(&a, 0)), "Unsigned number formatting #1");
+	TEST(string_equal(str("42"), string_fmtu64(&a, 42)), "Unsigned number formatting #2");
+	TEST(string_equal(str("18446744073709551615"), string_fmtu64(&a, 18446744073709551615u)), "Unsigned number formatting #3");
 	Arena_free(&a);
 
-	TEST(string_equal(str("0"), string_fmtb16(&a, 0).s), "Base16 formatting #1");
-	TEST(string_equal(str("ffffffffffffffff"), string_fmtb16(&a, -1).s), "Base16 formatting #2");
+	TEST(string_equal(str("0"), string_fmtb16(&a, 0)), "Base16 formatting #1");
+	TEST(string_equal(str("ffffffffffffffff"), string_fmtb16(&a, -1)), "Base16 formatting #2");
 	Arena_free(&a);
 
-	TEST(string_equal(str("0"), string_fmtb8(&a, 0).s), "Base8 formatting #1");
-	TEST(string_equal(str("1777777777777777777777"), string_fmtb8(&a, -1).s), "Base8 formatting #2");
+	TEST(string_equal(str("0"), string_fmtb8(&a, 0)), "Base8 formatting #1");
+	TEST(string_equal(str("1777777777777777777777"), string_fmtb8(&a, -1)), "Base8 formatting #2");
 	Arena_free(&a);
 
-	TEST(string_equal(string_build(&a, str("Hello,"), str(" world!"), str("\n")).s, str("Hello, world!\n")), "Variadic String Building");
+	TEST(string_equal(string_build(&a, str("Hello,"), str(" world!"), str("\n")), str("Hello, world!\n")), "Variadic String Building");
 
 
-	StringBuilder sb;
-	StringBuilder_create(&sb, &a, string_fmtu64(&a, test_count - test_failed).s);
+	StringBuilder sb = StringBuilder_create();
 #define a(s) StringBuilder_append(&sb, &a, s);
-	a(str("/")); a(string_fmtu64(&a, test_count).s); a(str(" tests passed.\n"));
+	a(string_fmtu64(&a, test_count-test_failed)); a(str("/")); a(string_fmtu64(&a, test_count)); 
+	a(str(" tests passed.\n"));
 #undef a
-	io_write(stdOut, StringBuilder_build(&sb, &a).s);
+	io_write(stdOut, StringBuilder_build(&sb, &a));
 	return test_failed;
 }

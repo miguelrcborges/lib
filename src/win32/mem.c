@@ -1,7 +1,30 @@
 #include "lib.h"
 
+typedef struct {
+	union {
+		u32 OemId;
+		struct {
+			u16 arch;
+			u16 res;
+		} dummy;
+	} dummyunion;
+	u32 pageSize;
+	void *minAddress;
+	void *maxAddress;
+	u32 processorMask;
+	u32 numberOfCPUs;
+	u32 processorType;
+	u32 allocGranularity;
+	u16 processorLevel;
+	u16 processorRevision;
+} SystemInfo;
+
 w32(void) *VirtualAlloc(void *ptr, usize size, u32 type, u32 protect);
 w32(bool) VirtualFree(void *ptr, usize size, u32 type); 
+w32(void) ExitProcess(u32 code);
+w32(void) GetSystemInfo(SystemInfo *info);
+
+static usize pageSize;
 
 enum CONSTANTS {
 	MEM_RESERVE = 0x00002000,
@@ -13,26 +36,59 @@ enum CONSTANTS {
 	PAGE_READWRITE = 0x04,
 };
 
-SafePointer mem_reserve(usize size) {
-	SafePointer r;
-	r._ptr = VirtualAlloc(NULL, size, MEM_RESERVE, PAGE_READWRITE);
-	return r;
+void *mem_reserve(usize size) {
+	void *p = VirtualAlloc(NULL, size, MEM_RESERVE, PAGE_READWRITE); 
+	if (unlikely(p == NULL)) {
+		io_write(getStdErr(), str("Out of memory.\n"));
+		die(1);
+	}
+	return p;
 }
 
-SafePointer mem_rescommit(usize size) {
-	SafePointer r;
-	r._ptr = VirtualAlloc(NULL, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-	return r;
+void *mem_rescommit(usize size) {
+	void *p = VirtualAlloc(NULL, size, MEM_RESERVE | MEM_RESERVE, PAGE_READWRITE); 
+	if (unlikely(p == NULL)) {
+		io_write(getStdErr(), str("Out of memory.\n"));
+		die(1);
+	}
+	return p;
 }
 
-bool mem_commit(void *ptr, usize size) {
-	return (bool) (VirtualAlloc(ptr, size, MEM_COMMIT, PAGE_READWRITE) == NULL);
+void mem_commit(void *ptr, usize size) {
+	void *p = VirtualAlloc(ptr, size, MEM_COMMIT, PAGE_READWRITE);
+	if (unlikely(p == NULL)) {
+		io_write(getStdErr(), str("Out of memory.\n"));
+		die(1);
+	}
+	return;
 }
 
-bool mem_decommit(void *ptr, usize size) {
-	return !VirtualFree(ptr, size, MEM_DECOMMIT);
+void mem_decommit(void *ptr, usize size) {
+	if (!VirtualFree(ptr, size, MEM_DECOMMIT)) {
+		io_write(getStdErr(), str("Failed to deallocate memory.\n"));
+		die(1);
+	}
+	return;
 }
 
-bool mem_release(void *ptr, usize size) {
-	return !VirtualFree(ptr, 0, MEM_RELEASE);
+void mem_release(void *ptr, usize size) {
+	if (!VirtualFree(ptr, size, MEM_RELEASE)) {
+		io_write(getStdErr(), str("Failed to release memory.\n"));
+		die(1);
+	}
+	return;
+}
+
+usize mem_getPageSize(void) {
+	if (likely(pageSize))
+		return pageSize;
+
+	SystemInfo si;
+	GetSystemInfo(&si);
+	pageSize = si.pageSize;
+	return pageSize;
+}
+
+void die(usize code) {
+	ExitProcess(code);
 }

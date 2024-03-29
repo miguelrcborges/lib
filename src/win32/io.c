@@ -7,48 +7,51 @@ w32(usize) CreateFileW(u16 *fname, u32 flags, u32 shared, void *sec, u64 mode, u
 w32(i32) CloseHandle(usize fd);
 w32(u32) GetFileSize(usize fd, u32 *high);
 
-string errInvalidFileOpenMode(void) {
-	return str("Tried to open the file with an invalid mode.");
+
+void io_write(usize fd, string s) {
+	usize written = 0;
+	while (written < s.len) {
+		u32 last_count;
+		u32 write_amount = min(s.len - written, UINT32_MAX);
+		if (!likely(WriteFile(fd, s.str+written, write_amount, &last_count, NULL))) {
+			if (unlikely(fd == getStdErr())) {
+				io_write(getStdErr(), str("Failed to write to stderr.\n"));
+				die(1);
+			}
+			io_write(getStdErr(), str("Failed to write to file.\n"));
+			die(1);
+		}
+		written += last_count;
+	}
 }
 
-string errFailedToConvertToUTF16(void) {
-	return str("Failed to convert filename to UTF-16.");
+usize io_read(usize fd, u8 *buf, usize len) {
+	usize read = 0;
+	u32 last_count;
+	while (read < len) {
+		u32 read_amount = min(last_count - read, UINT32_MAX);
+		if (!likely(ReadFile(fd, buf+read, read_amount, &last_count, NULL))) {
+			io_write(getStdErr(), str("Failed to write to file.\n"));
+			die(1);
+		}
+		read += last_count;
+		if (last_count < read_amount) {
+			break;
+		}
+	}
+	return read;
 }
 
-string errFailedToOpenFile(void) {
-	return str("Failed to open file.");
-}
-
-string errFileTooLong(void) {
-	return str("Can't read immediatally files longer than 4 GB.");
-}
-
-string errReadWrongAmount(void) {
-	return str("The amount of read bytes don't match file size.");
-}
-
-
-bool io_write(usize fd, string s) {
-	u32 written;
-	return !WriteFile(fd, s.str, s.len, &written, NULL);
-}
-
-bool io_read(usize fd, u8 *buf, usize len, usize *written) {
-	return !ReadFile(fd, buf, len, (u32 *)written, NULL);
-}
-
-io_open_result io_open(string file, u32 mode) {
-	io_open_result ret;
-	ret.err.err = NULL;
+usize io_open(string file, u32 mode) {
 	if (unlikely(mode >= IO_MODES_COUNT)) {
-		ret.err.err = errInvalidFileOpenMode;
-		return ret;
+		io_write(getStdErr(), str("Failed to open file.\n"));
+		die(1);
 	}
 
 	u16 conversion_buffer[32768];
 	if (MultiByteToWideChar(65001, 0, file.str, file.len, conversion_buffer, 32768) == 0) {
-		ret.err.err = errFailedToConvertToUTF16;
-		return ret;
+		io_write(getStdErr(), str("Failed to open file.\n"));
+		die(1);
 	};
 
 	static u32 flags_lookup[IO_MODES_COUNT] = {
@@ -63,61 +66,27 @@ io_open_result io_open(string file, u32 mode) {
 		[IO_APPEND] = 4,
 	};
 
-	ret.fd = CreateFileW(conversion_buffer, flags_lookup[mode], 0, 0, mode_lookup[mode], 128, 0);
-	if (ret.fd == -1) {
-		ret.err.err = errFailedToOpenFile;
+	usize fd = CreateFileW(conversion_buffer, flags_lookup[mode], 0, 0, mode_lookup[mode], 128, 0);
+	if (fd == (usize)-1) {
+		io_write(getStdErr(), str("Failed to open file.\n"));
+		die(1);
 	}
-	return ret;
+	return fd;
 }
 
-bool io_close(usize fd) {
-	return CloseHandle(fd) == 0;
+void io_close(usize fd) {
+	if (CloseHandle(fd) == 0) {
+		io_write(getStdErr(), str("Failed to close file.\n"));
+		die(1);
+	}
 }
 
-io_readFile_result io_readFile(Arena *a, string file) {
-	io_readFile_result ret;
-	u16 conversion_buffer[32768];
-	if (MultiByteToWideChar(65001, 0, file.str, file.len, conversion_buffer, 32768) == 0) {
-		ret.err.err = errFailedToConvertToUTF16;
-		return ret;
-	};
-
-	usize fd = CreateFileW(conversion_buffer, 1179785, 0, 0, 3, 128, 0);
-	if (unlikely(fd == (usize) -1)) {
-		ret.err.err = errFailedToOpenFile;
-		return ret;
+usize io_len(usize fd) {
+	u32 high;
+	u32 low = GetFileSize(fd, &high);
+	if (high == ((u32) -1)) {
+		io_write(getStdErr(), str("Failed to get file size\n"));
+		die(1);
 	}
-
-	u32 hw;
-	u32 lw = GetFileSize(fd, &hw);
-	usize len = ((usize)hw << 32) | (usize) lw;
-	ArenaState as = Arena_saveState(a);
-	SafePointer sp = Arena_alloc(a, len, 1);
-	if (unlikely(sp._ptr == NULL)) {
-		CloseHandle(fd);
-		ret.err.err = errFailedToAllocate;
-		return ret;
-	}
-	void *p = sp._ptr;
-
-	// As it is, it can only be read 4 GB on one go.
-	if (unlikely(len >= ((usize)1 << 32))) {
-		CloseHandle(fd);
-		ret.err.err = errFileTooLong;
-		return ret;
-	}
-
-	u32 read;
-	bool rr = !ReadFile(fd, p, len, &read, NULL);
-	CloseHandle(fd);
-
-	if (unlikely(rr || read != len)) {
-		ret.err.err = errReadWrongAmount;
-		Arena_rollback(as);
-		return ret;
-	}
-
-	ret.s.str = sp._ptr;
-	ret.s.len = len;
-	return ret;
+	return ((usize)high << 32) | (usize)low;
 }

@@ -24,7 +24,7 @@
 #elif __has_builtin(__builtin_unreachable)
 	#define assert(x) ((x)?(void)0:__builtin_unreachable());
 #elif defined(_DEBUG)
-	#define assert(x) ((x)?(void)0:*(int*)0)
+	#define assert(x) ((x)?(void)0:__failed_assert(str("Failed assert at " __FILE__ ":" #__LINE__ ": " #x)))
 #else
 	#define assert(x) ((void)0)
 #endif
@@ -38,9 +38,9 @@
 #endif
 
 #if __has_feature(c_static_assert)
-	#define static_assert(x, message) _Static_assert(x, message)
+	#define static_assert(x) _Static_assert(x, #x)
 #else
-	#define static_assert(x, message) assert(x)
+	#define static_assert(x) assert(x)
 #endif
 
 #ifdef _WIN32
@@ -94,16 +94,6 @@ typedef struct {
 	string (*err)(void);
 } GenericError;
 
-static force_inline void *unwrap(SafePointer sp) {
-	if (unlikely(sp._ptr == NULL)) {
-		#if __has_builtin(__builtin_trap)
-			__builtin_trap();
-		#else
-			(void)*(int*)0;
-		#endif
-	}
-	return sp._ptr; 
-}
 
 #ifndef LIB_H_FREESTANDING
 
@@ -130,45 +120,30 @@ enum IO_OPEN_MODES {
 	#define getStdErr() 2
 #endif
 
-typedef struct arenaBlock ArenaBlock;
-struct arenaBlock {
+typedef struct {
+	u8 *start;
 	u8 *offset;
+	u8 *commited;
 	u8 *end;
-	ArenaBlock *next;
-};
-
-typedef struct {
-	ArenaBlock *first;
-	usize block_len;
-} FreeList;
-
-typedef struct {
-	ArenaBlock *first;
-	ArenaBlock *current;
-	FreeList *free;
 } Arena;
 
 typedef struct {
 	Arena *arena;
-	ArenaBlock *current;
 	u8 *offset;
+	u8 *commited;
 } ArenaState;
 
-typedef struct poolFreeList PoolFreeList;
-struct poolFreeList {
-	PoolFreeList *next;
+typedef struct _PoolNode PoolNode;
+struct _PoolNode {
+	PoolNode *next;
 };
 
 typedef struct {
 	Arena arena;
-	PoolFreeList *free;
 	usize alloc_size;
 	usize alloc_alignment;
+	PoolNode *free;
 } Pool;
-
-typedef struct {
-	void *_state;
-} Mutex;
 
 
 typedef struct stringNode StringNode;
@@ -184,39 +159,36 @@ typedef struct {
 } StringBuilder;
 
 
+typedef struct {
+	void *_state;
+} Mutex;
+
 /* io.c */
-bool io_write(usize fd, string s);
-bool io_read(usize fd, u8 *buff, usize len, usize *written);
-typedef struct {
-	GenericError err;
-	usize fd;
-} io_open_result;
-io_open_result io_open(string file, u32 mode);
-bool io_close(usize fd);
-typedef struct {
-	GenericError err;
-	string s;
-} io_readFile_result;
-io_readFile_result io_readFile(Arena *a, string file);
+void io_write(usize fd, string s);
+usize io_read(usize fd, u8 *buff, usize len);
+usize io_open(string file, u32 mode);
+usize io_len(usize fd);
+void io_close(usize fd);
+string io_readFile(Arena *a, string file);
 
 
 /* mem.c */ 
-string errFailedToAllocate(void);
-SafePointer mem_reserve(usize size);
-SafePointer mem_rescommit(usize size);
-bool mem_commit(void *ptr, usize size);
-bool mem_decommit(void *ptr, usize size);
-bool mem_release(void *ptr, usize size);
+int __failed_assert(string a);
+void die(usize code);
+void *mem_reserve(usize size);
+void *mem_rescommit(usize size);
+void mem_commit(void *ptr, usize size);
+void mem_decommit(void *ptr, usize size);
+void mem_release(void *ptr, usize size);
+usize mem_getPageSize(void);
 void mem_copy(void *restrict dest, void *restrict orig, usize len);
-Arena Arena_create(FreeList *list);
-SafePointer Arena_alloc(Arena *a, usize size, usize alignment);
+Arena Arena_create(usize limit_mem);
+void *Arena_alloc(Arena *a, usize size, usize alignment);
 ArenaState Arena_saveState(Arena *a);
-void Arena_rollback(ArenaState a);
+void Arena_rollback(ArenaState s);
 void Arena_free(Arena *a);
-FreeList FreeList_create(usize block_len);
-bool FreeList_release(FreeList *list);
-Pool Pool_create(FreeList *list, usize alloc_size, usize alignment);
-SafePointer Pool_alloc(Pool *p);
+Pool Pool_create(usize limit_mem, usize alloc_size, usize alignment);
+void *Pool_alloc(Pool *p);
 void Pool_free(Pool *p, void *item);
 void Pool_clear(Pool *p);
 
@@ -224,19 +196,16 @@ void Pool_clear(Pool *p);
 /* str.c */
 bool string_equal(string s1, string s2);
 i8 string_compare(string s1, string s2);
-typedef struct {
-	GenericError err;
-	string s;
-} string_format_result;
-string_format_result string_fmtu64(Arena *a, u64 n);
-string_format_result string_fmti64(Arena *a, i64 n);
-string_format_result string_fmtb16(Arena *a, u64 n);
-string_format_result string_fmtb8(Arena *a, u64 n);
-bool StringBuilder_create(StringBuilder *sb, Arena *a, string start);
-bool StringBuilder_append(StringBuilder *sb, Arena *a, string s);
-string_format_result StringBuilder_build(StringBuilder *sb, Arena *a);
-string_format_result _string_build(Arena *a, usize n, ...);
+string string_fmtu64(Arena *a, u64 n);
+string string_fmti64(Arena *a, i64 n);
+string string_fmtb16(Arena *a, u64 n);
+string string_fmtb8(Arena *a, u64 n);
+StringBuilder StringBuilder_create(void);
+void StringBuilder_append(StringBuilder *sb, Arena *a, string s);
+string StringBuilder_build(StringBuilder *sb, Arena *a);
+string _string_build(Arena *a, usize n, ...);
 #define string_build(a, ...) _string_build(a, sizeof((string[]){__VA_ARGS__})/sizeof(string), __VA_ARGS__)
+
 
 /* thread.c */
 Mutex Mutex_create(void);
