@@ -21,10 +21,10 @@
 
 #ifdef HIDE_ASSERT
 	#define assert(x) ((void)0)
-#elif __has_builtin(__builtin_unreachable)
-	#define assert(x) ((x)?(void)0:__builtin_unreachable());
 #elif defined(_DEBUG)
-	#define assert(x) ((x)?(void)0:__failed_assert(str("Failed assert at " __FILE__ ":" #__LINE__ ": " #x)))
+	#define assert(x) ((x)?(void)0:__failed_assert(str("Failed assert at " __FILE__ ":" STRINGIFY(__LINE__) ": " #x "\n")))
+#elif __has_builtin(__builtin_unreachable) 
+	#define assert(x) ((x)?(void)0:__builtin_unreachable());
 #else
 	#define assert(x) ((void)0)
 #endif

@@ -118,3 +118,9 @@ void mem_copy(void *restrict dest, void *restrict orig, usize len) {
 		}
 	}
 }
+
+int __failed_assert(string a) {
+	io_write(getStdErr(), a);
+	die(1);
+	return 0;
+}

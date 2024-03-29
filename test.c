@@ -49,7 +49,6 @@ main()
 
 	TEST(string_equal(string_build(&a, str("Hello,"), str(" world!"), str("\n")), str("Hello, world!\n")), "Variadic String Building");
 
-
 	StringBuilder sb = StringBuilder_create();
 #define a(s) StringBuilder_append(&sb, &a, s);
 	a(string_fmtu64(&a, test_count-test_failed)); a(str("/")); a(string_fmtu64(&a, test_count)); 
