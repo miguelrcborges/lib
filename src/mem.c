@@ -14,7 +14,7 @@
 Arena Arena_create(usize limit_mem) {
 	Arena r;
 	if (limit_mem == 0) {
-		limit_mem = ((usize)1 << 32);
+		limit_mem = ((usize)1 << 24);
 	}
 
 	r.start = mem_reserve(limit_mem);
