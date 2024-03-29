@@ -44,7 +44,7 @@ usize io_read(usize fd, u8 *buf, usize len) {
 
 usize io_open(string file, u32 mode) {
 	if (unlikely(mode >= IO_MODES_COUNT)) {
-		io_write(getStdErr(), str("Failed to open file.\n"));
+		io_write(getStdErr(), str("Invalid mode to open file.\n"));
 		die(1);
 	}
 

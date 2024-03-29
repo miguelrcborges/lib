@@ -3,26 +3,42 @@
 #include <limits.h>
 #include <string.h>
 
-bool io_write(usize fd, string s) {
-	if (unlikely(s.len > INT_MAX)) {
-		return 1;
+void io_write(usize fd, string s) {
+	usize written = 0;
+	while (written < s.len) {
+		int to_write = min(INT_MAX, s.len - written);
+		int tmp = fprintf((FILE *)fd, "%.*s", to_write, s.str + written);
+		if (unlikely(tmp < 0)) {
+			fprintf(stderr, "Failed to write to file");
+			die(1);
+		}
+		written += tmp;
 	}
-	return fprintf((FILE *) fd, "%.*s", (int) s.len, s.str) < 0;
 }
 
-bool io_read(usize fd, u8 *buf, usize len, usize *written) {
-	u8 *end = buf + len;
-	char c;
-	while (buf != end && (c = fgetc((FILE *)fd)) != EOF) {
-		*buf = c;
-		buf += 1;
+usize io_read(usize fd, u8 *buf, usize len) {
+	usize read = 0;
+	u32 last_count;
+	while (read < len) {
+		u32 read_amount = min(last_count - read, UINT32_MAX);
+		u32 tmp = fread(buf, 1, len, (FILE*)fd);
+		if (unlikely(tmp < 0)) {
+			io_write(getStdErr(), str("Failed to write to file.\n"));
+			die(1);
+		}
+		read += tmp;
+		if (last_count < read_amount) {
+			break;
+		}
 	}
-	return ferror((FILE *)fd);
+	return read;
 }
 
-bool io_open(string file, u32 mode, usize *fd) {
+usize io_open(string file, u32 mode) {
+	usize fd;
 	if (unlikely(mode >= IO_MODES_COUNT)) {
-		return 1;
+		io_write(getStdErr(), str("Invalid mode to open file.\n"));
+		die(1);
 	}
 
 	static char *mode_lookup[IO_MODES_COUNT] = {
@@ -32,48 +48,47 @@ bool io_open(string file, u32 mode, usize *fd) {
 	};
 
 	if (likely(file.str[file.len] == '\0')) {
-		*fd = (usize) fopen((char *)file.str, mode_lookup[mode]);
+		fd = (usize) fopen((char *)file.str, mode_lookup[mode]);
 	} else {
 		char zeroed[32768];
 		memcpy(zeroed, file.str, file.len);
 		zeroed[file.len] = '\0';
-		*fd = (usize) fopen(zeroed, mode_lookup[mode]);
+		fd = (usize) fopen(zeroed, mode_lookup[mode]);
 	}
-	if (unlikely(*fd == 0)) {
-		return 1;
+	if (unlikely(fd == 0)) {
+		io_write(getStdErr(), str("Failed to open file.\n"));
+		die(1);
 	}
-	setbuf((FILE *)*fd, NULL);
-	return 0;
+	setbuf((FILE *)fd, NULL);
+	return fd;
 }
 
-bool io_close(usize fd) {
-	return fclose((FILE *)fd);
+void io_close(usize fd) {
+	if (unlikely(fclose((FILE *)fd))) {
+		io_write(getStdErr(), str("Failed to close file.\n"));
+		die(1);
+	}
 }
 
-bool io_readFile(Arena *a, string file, string *content) {
-	FILE *f;
-	if (likely(file.str[file.len] == '\0')) {
-		f = fopen((char *)file.str, "rb");
-	} else {
-		char zeroed[32768];
-		memcpy(zeroed, file.str, file.len);
-		zeroed[file.len] = '\0';
-		f = fopen(zeroed, "rb");
+usize io_len(usize fd) {
+	fpos_t init;
+	FILE *f = (FILE *)fd;
+	if (unlikely(fgetpos(f, &init))) {
+		io_write(getStdErr(), str("Failed to get file length.\n"));
+		die(1);
 	}
-
-	if (unlikely(f == NULL))
-		return 1;
-
-	fseek(f, 0, SEEK_END);
+	if (unlikely(fseek(f, 0, SEEK_END))) {
+		io_write(getStdErr(), str("Failed to get file length.\n"));
+		die(1);
+	};
 	usize len = ftell(f);
-	fseek(f, 0, SEEK_SET);
-
-	SafePointer sp = Arena_alloc(a, len, 1);
-	if (sp._ptr == NULL)
-		return 1;
-	content->str = sp._ptr;
-	content->len = len;
-	fread(sp._ptr, 1, len, f);
-
-	return 0;
+	if (unlikely(len == (usize)-1)) {
+		io_write(getStdErr(), str("Failed to get file length.\n"));
+		die(1);
+	}
+	if (unlikely(fsetpos(f, &init))) {
+		io_write(getStdErr(), str("Failed to get file length.\n"));
+		die(1);
+	};
+	return len;
 }

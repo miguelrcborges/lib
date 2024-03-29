@@ -3,28 +3,42 @@
 #include <stdlib.h>
 #include <string.h>
 
-SafePointer mem_reserve(usize size) {
-	SafePointer r;
-	r._ptr = malloc(size);
-	return r;
+void *mem_reserve(usize size) {
+	void *p = malloc(size);
+	if (unlikely(p == NULL)) {
+		io_write(getStdErr(), str("Out of memory.\n"));
+		die(1);
+	}
+	return p;
 }
 
-SafePointer mem_rescommit(usize size) {
-	SafePointer r;
-	r._ptr = calloc(size, 1);
-	return r;
+void *mem_rescommit(usize size) {
+	void *p = calloc(size, 1);
+	if (unlikely(p == NULL)) {
+		io_write(getStdErr(), str("Out of memory.\n"));
+		die(1);
+	}
+	return p;
 }
 
-bool mem_commit(void *ptr, usize size) {
+void mem_commit(void *ptr, usize size) {
 	memset(ptr, 0, size);
-	return 0;
+	return;
 }
 
-bool mem_decommit(void *ptr, usize size) {
-	return 0;
+void mem_decommit(void *ptr, usize size) {
+	return;
 }
 
-bool mem_release(void *ptr, usize size) {
+void mem_release(void *ptr, usize size) {
 	free(ptr);
-	return 0;
+	return;
+}
+
+usize mem_getPageSize(void) {
+	return 1;
+}
+
+void die(usize code) {
+	exit(code);
 }
