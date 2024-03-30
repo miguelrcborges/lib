@@ -1,18 +1,14 @@
-.intel_syntax noprefix
-
-.text
 .global _start
 _start:
-	xor rbp, rbp
-	pop rdi
-	mov rsi, rsp
-	mov rdx, rdi
-	add rdx, 1
-	imul rdx, 8 
-	add rdx, rsi
-	and rsp, -16
+	xor %rbp, %rbp
+	pop %rdi
+	mov %rsp, %rsi
+	mov %rdi, %rdx
+	add $1, %rdx
+	imul $8, %rdx
+	add %rsi, %rdx
+	and $0xfffffffffffffff0, %rsp
 	call main
 
-	mov rdi, rax
-	mov rax, 60
-	syscall
+	mov %rax, %rdi
+	call die

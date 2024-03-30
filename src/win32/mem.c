@@ -65,7 +65,7 @@ void mem_commit(void *ptr, usize size) {
 
 void mem_decommit(void *ptr, usize size) {
 	if (!VirtualFree(ptr, size, MEM_DECOMMIT)) {
-		io_write(getStdErr(), str("Failed to deallocate memory.\n"));
+		io_write(getStdErr(), str("Failed to decommit memory.\n"));
 		die(1);
 	}
 	return;

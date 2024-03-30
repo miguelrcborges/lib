@@ -1,4 +1,3 @@
-
 #include "lib.h"
 
 static usize stdErr;

@@ -50,11 +50,13 @@
 #endif
 
 #if defined(__GNUC__)
-    #define force_inline __attribute__((always_inline))
+	#define force_inline __attribute__((always_inline))
+	#define no_inline __attribute__((noinline))
 #elif defined(_MSC_VER)
-    #define force_inline __forceinline
+	#define force_inline __forceinline
+	#define no_inline __declspec(noinline)
 #else
-    #define force_inline inline
+	#define force_inline inline
 #endif
 
 #define len(a) (sizeof(a)/sizeof(*(a)))
