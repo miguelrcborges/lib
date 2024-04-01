@@ -14,11 +14,9 @@ void io_write(usize fd, string s) {
 		u32 last_count;
 		u32 write_amount = min(s.len - written, UINT32_MAX);
 		if (!likely(WriteFile(fd, s.str+written, write_amount, &last_count, NULL))) {
-			if (unlikely(fd == getStdErr())) {
-				io_write(getStdErr(), str("Failed to write to stderr.\n"));
-				die(1);
-			}
-			io_write(getStdErr(), str("Failed to write to file.\n"));
+			#define ex(x) (u8*)x, sizeof(x)-1
+			u32 written;
+			WriteFile(getStdErr(), ex("Failed to write to file.\n"), &written, NULL);
 			die(1);
 		}
 		written += last_count;
@@ -29,9 +27,9 @@ usize io_read(usize fd, u8 *buf, usize len) {
 	usize read = 0;
 	u32 last_count;
 	while (read < len) {
-		u32 read_amount = min(last_count - read, UINT32_MAX);
+		u32 read_amount = min(len - read, UINT32_MAX);
 		if (!likely(ReadFile(fd, buf+read, read_amount, &last_count, NULL))) {
-			io_write(getStdErr(), str("Failed to write to file.\n"));
+			io_write(getStdErr(), str("Failed to read file.\n"));
 			die(1);
 		}
 		read += last_count;

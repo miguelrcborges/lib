@@ -1,40 +1,29 @@
-.intel_syntax noprefix
-
-// bool io_write(usize fd, string s);
-// bool io_read(usize fd, u8 *buff, usize len, usize *written);
-// bool io_open(string file, u32 mode, usize *fd);
-// bool io_close(usize fd);
-
-.text
-.global io_write
-io_write:
-	mov rax, 1 
-	syscall
-	cmp rax, -1
-	sete al
-	movzx eax, al
-	ret
-
-.global io_close 
-io_close:
-	mov rax, 3
+.global __open_syscall
+__open_syscall:
+	mov $2, %rax
 	syscall
 	ret
 
-.global io_read
-io_read:
-	push rcx
-	mov rax, 0
+.global __write_syscall
+__write_syscall:
+	mov $1, %rax
 	syscall
-	pop rcx
-	mov QWORD PTR [rcx], rax
-	cmp rax, -1
-	sete al
-	movzx eax, al
 	ret
 
-.global open_syscall
-open_syscall:
-	mov rax, 2
+.global __read_syscall
+__read_syscall:
+	mov $0, %rax
+	syscall
+	ret
+
+.global __close_syscall
+__close_syscall:
+	mov $3, %rax
+	syscall
+	ret
+
+.global __fstat_syscall
+__fstat_syscall:
+	mov $5, %rax
 	syscall
 	ret
