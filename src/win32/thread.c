@@ -75,7 +75,6 @@ void Thread_sleep(u64 micros) {
 			break;
 		} else {
 			Sleep(0); Sleep(0); Sleep(0);
-			Sleep(0); Sleep(0); Sleep(0);
 		}
 	}
 }
