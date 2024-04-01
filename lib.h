@@ -163,6 +163,10 @@ typedef struct {
 	void *_state;
 } Mutex;
 
+typedef struct {
+	usize _handle;
+} Thread;
+
 /* io.c */
 void io_write(usize fd, string s);
 usize io_read(usize fd, u8 *buff, usize len);
@@ -212,6 +216,9 @@ Mutex Mutex_create(void);
 bool Mutex_tryLock(Mutex *m);
 void Mutex_lock(Mutex *m);
 void Mutex_unlock(Mutex *m);
+Thread Thread_create(void (*start)(void *data), void *data);
+void Thread_join(Thread t);
+void Thread_sleep(usize micros);
 
 #endif /* LIB_H_FREESTANDING */ 
 
