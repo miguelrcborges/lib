@@ -26,7 +26,7 @@
 #elif __has_builtin(__builtin_unreachable) 
 	#define assert(x) ((x)?(void)0:__builtin_unreachable());
 #else
-	#define assert(x) ((void)0)
+	#define assert(x) ((void)(x))
 #endif
 
 #if __has_builtin(__builtin_expect)
@@ -166,6 +166,11 @@ typedef struct {
 } Mutex;
 
 typedef struct {
+	void *_state;
+	Mutex mux;
+} Condition;
+
+typedef struct {
 	usize _handle;
 } Thread;
 
@@ -221,6 +226,11 @@ void Mutex_unlock(Mutex *m);
 Thread Thread_create(void (*start)(void *data), void *data);
 void Thread_join(Thread t);
 void Thread_sleep(usize micros);
+Condition Condition_create(void);
+void Condition_wait(Condition *cond);
+void Condition_wake(Condition *cond);
+void Condition_broadcast(Condition *cond);
+
 
 #endif /* LIB_H_FREESTANDING */ 
 
