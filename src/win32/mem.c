@@ -46,7 +46,7 @@ void *mem_reserve(usize size) {
 }
 
 void *mem_rescommit(usize size) {
-	void *p = VirtualAlloc(NULL, size, MEM_RESERVE | MEM_RESERVE, PAGE_READWRITE); 
+	void *p = VirtualAlloc(NULL, size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE); 
 	if (unlikely(p == NULL)) {
 		io_write(getStdErr(), str("Out of memory.\n"));
 		die(1);
@@ -72,7 +72,8 @@ void mem_decommit(void *ptr, usize size) {
 }
 
 void mem_release(void *ptr, usize size) {
-	if (!VirtualFree(ptr, size, MEM_RELEASE)) {
+	(void)(size);
+	if (!VirtualFree(ptr, 0, MEM_RELEASE)) {
 		io_write(getStdErr(), str("Failed to release memory.\n"));
 		die(1);
 	}
