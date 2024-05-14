@@ -4,8 +4,8 @@
 #include "common.c"
 
 static long __open_syscall(const u8 *name, long flags, usize modes);
-static usize __write_syscall(long fd, u8 *buf, size_t count);
-static usize __read_syscall(long fd, const u8 *buf, size_t count);
+static usize __write_syscall(long fd, const u8 *buf, size_t count);
+static usize __read_syscall(long fd, u8 *buf, size_t count);
 static long __close_syscall(long fd);
 
 // sizeof struct stat is 144
@@ -14,7 +14,14 @@ struct stat {
 	usize len;
 	u8 rpad[144-48-8];
 };
-static int __fstat_syscall(long fd, struct stat *s);
+static long __fstat_syscall(long fd, struct stat *s);
+
+__attribute__((noreturn))
+static void handle_err(string err) {
+	__write_syscall(2, err.str, err.len); 
+	die(1);
+	__builtin_unreachable();
+}
 
 usize io_open(string file, u32 mode) {
 	int fd;
@@ -103,7 +110,6 @@ usize io_len(usize fd) {
 }
 
 
-
 static long __open_syscall(const u8 *name, long flags, usize modes) {
 	register long rax asm("rax");
 	register long rdi asm("rdi"), rsi asm("rsi"), rdx asm("rdx");
@@ -121,7 +127,7 @@ static long __open_syscall(const u8 *name, long flags, usize modes) {
 	return rax;
 }
 
-static usize __write_syscall(long fd, u8 *buf, size_t count) {
+static usize __write_syscall(long fd, const u8 *buf, size_t count) {
 	register long rax asm("rax");
 	register long rdi asm("rdi"), rsi asm("rsi"), rdx asm("rdx");
 	rax = 1;
@@ -132,13 +138,13 @@ static usize __write_syscall(long fd, u8 *buf, size_t count) {
 		"syscall"
 		: "=a"(rax)
 		: "a"(rax), "r"(rdi), "r"(rsi), "r"(rdx)
-		: "memory", "rcx", "r11"
+		: "rcx", "r11"
 	);
 
 	return rax;
 }
 
-static usize __read_syscall(long fd, const u8 *buf, size_t count) {
+static usize __read_syscall(long fd, u8 *buf, size_t count) {
 	register long rax asm("rax");
 	register long rdi asm("rdi"), rsi asm("rsi"), rdx asm("rdx");
 	rax = 0;
@@ -149,7 +155,7 @@ static usize __read_syscall(long fd, const u8 *buf, size_t count) {
 		"syscall"
 		: "=a"(rax)
 		: "a"(rax), "r"(rdi), "r"(rsi), "r"(rdx)
-		: "memory", "rcx", "r11"
+		: "rcx", "r11"
 	);
 
 	return rax;
@@ -170,6 +176,21 @@ static long __close_syscall(long fd) {
 	return rax;
 }
 
+static long __fstat_syscall(long fd, struct stat *s) {
+	register long rax asm("rax");
+	register long rdi asm("rdi"), rsi asm("rsi");
+	rax = 5;
+	rdi = fd;
+	rsi = (long)rsi;
+	asm volatile (
+		"syscall"
+		: "=a"(rax)
+		: "a"(rax), "r"(rdi), "r"(rsi)
+		: "rcx", "r11"
+	);
+
+	return rax;
+}
 
 __attribute__((naked))
 void _start() {
@@ -201,4 +222,119 @@ void die(usize code) {
 		: "r"(rax), "r"(rdi)
 	);
 	__builtin_unreachable();
+}
+
+
+static uptr __mmap_syscall(uptr addr, usize len, u64 prot, u64 flags, long fd, usize off) {
+	register uptr rax asm("rax");
+	register long rdi asm("rdi"), rsi asm("rsi"), rdx asm("rdx"), r10 asm("r10"), r8 asm("r8"), r9 asm("r9");
+	rax = 9;
+	rdi = addr;
+	rsi = len;
+	rdx = prot;
+	r10 = flags;
+	r8 = fd;
+	r9 = off;
+	asm volatile (
+		"syscall"
+		: "=a"(rax)
+		: "a"(rax), "r"(rdi), "r"(rsi), "r"(rdx), "r"(r10), "r"(r8), "r"(r9)
+		: "rcx", "r11"
+	);
+
+	return rax;
+}
+
+static long __mprotect_syscall(uptr addr, usize len, u64 prot) {
+	register long rax asm("rax");
+	register long rdi asm("rdi"), rsi asm("rsi"), rdx asm("rdx");
+	rax = 10;
+	rdi = addr;
+	rsi = len;
+	rdx = prot;
+	asm volatile (
+		"syscall"
+		: "=a"(rax)
+		: "a"(rax), "r"(rdi), "r"(rsi), "r"(rdx)
+		: "rcx", "r11"
+	);
+
+	return rax;
+}
+
+static long __munmap_syscall(uptr addr, usize len) {
+	register long rax asm("rax");
+	register long rdi asm("rdi"), rsi asm("rsi");
+	rax = 11;
+	rdi = addr;
+	rsi = len;
+	asm volatile (
+		"syscall"
+		: "=a"(rax)
+		: "a"(rax), "r"(rdi), "r"(rsi)
+		: "rcx", "r11"
+	);
+
+	return rax;
+}
+
+static long __madvise_syscall(uptr addr, usize len, int behaviour) {
+	register long rax asm("rax");
+	register long rdi asm("rdi"), rsi asm("rsi"); register int edx asm("edx");
+	rax = 28;
+	rdi = addr;
+	rsi = len;
+	edx = behaviour;
+	asm volatile (
+		"syscall"
+		: "=a"(rax)
+		: "a"(rax), "r"(rdi), "r"(rsi), "r"(edx)
+		: "rcx", "r11"
+	);
+
+	return rax;
+}
+
+void *mem_reserve(usize size) {
+	uptr address = __mmap_syscall(0, size, 0, 34, -1, 0);
+	if (unlikely(address == (uptr) -1)) {
+		handle_err(str("Failed to request virutal memory.\n"));
+		__builtin_unreachable();
+	}
+	return (void *) address;
+}
+
+void *mem_rescommit(usize size) {
+	uptr address = __mmap_syscall(0, size, 3, 34, -1, 0);
+	if (unlikely(address == (uptr) -1)) {
+		handle_err(str("Failed to commit memory.\n"));
+		__builtin_unreachable();
+	}
+	return (void *) address;
+}
+
+void mem_commit(void *ptr, usize size) {
+	if (unlikely(__mprotect_syscall((uptr) ptr, size, 3))) {
+		handle_err(str("Failed to commit memory.\n"));
+	}
+}
+
+void mem_decommit(void *ptr, usize size) {
+	if (unlikely(__madvise_syscall((uptr) ptr, size, 4))) {
+		handle_err(str("Failed to decommit memory.\n"));
+	}
+}
+
+void mem_release(void *ptr, usize size) {
+	if (unlikely(__munmap_syscall((uptr) ptr, size))) {
+		handle_err(str("Failed to unmap memory.\n"));
+	}
+}
+
+usize mem_getPageSize() {
+	return 4096;
+}
+
+void __stack_chk_fail(void) {
+	handle_err(str("Stack smashing detected. Exiting.\n"));
 }
