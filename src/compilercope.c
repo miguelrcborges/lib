@@ -7,6 +7,10 @@ typedef __attribute__((__may_alias__)) size_t WT;
 #define WS (sizeof(WT))
 #endif
 
+#ifdef _MSC_VER
+#pragma intrinsic(memcpy)
+#pragma function(memcpy)
+#endif
 void *memcpy(void *restrict dest, const void *restrict src, size_t n)
 {
 	unsigned char *d = dest;
@@ -128,6 +132,10 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t n)
 	return dest;
 }
 
+#ifdef _MSC_VER
+#pragma intrinsic(memcmp)
+#pragma function(memcmp)
+#endif
 int memcmp(const void *vl, const void *vr, size_t n)
 {
 	const unsigned char *l=vl, *r=vr;
@@ -135,6 +143,10 @@ int memcmp(const void *vl, const void *vr, size_t n)
 	return n ? *l-*r : 0;
 }
 
+#ifdef _MSC_VER
+#pragma intrinsic(memmove)
+#pragma function(memmove)
+#endif
 void *memmove(void *dest, const void *src, size_t n)
 {
 	char *d = dest;
@@ -170,6 +182,10 @@ void *memmove(void *dest, const void *src, size_t n)
 	return dest;
 }
 
+#ifdef _MSC_VER
+#pragma intrinsic(memset)
+#pragma function(memset)
+#endif
 void *memset(void *dest, int c, size_t n)
 {
 	unsigned char *s = dest;
@@ -263,6 +279,10 @@ void *memset(void *dest, int c, size_t n)
 #define HIGHS (ONES * (UCHAR_MAX/2+1))
 #define HASZERO(x) ((x)-ONES & ~(x) & HIGHS)
 
+#ifdef _MSC_VER
+#pragma intrinsic(strlen)
+#pragma function(strlen)
+#endif
 size_t strlen(const char *s)
 {
 	const char *a = s;

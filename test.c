@@ -1,4 +1,4 @@
-#include "lib.h"
+#include "src/lib.h"
 
 static usize stdErr;
 static usize stdOut;
