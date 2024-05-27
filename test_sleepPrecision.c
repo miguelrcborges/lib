@@ -1,4 +1,4 @@
-#include "lib.h"
+#include "src/lib.h"
 w32(i32) QueryPerformanceCounter(u64 *perfCount);
 w32(i32) QueryPerformanceFrequency(u64 *perfFrequency);
 

@@ -1,4 +1,4 @@
-#include "lib.h"
+#include "src/lib.h"
 
 static usize stdErr;
 static usize stdOut;
@@ -16,11 +16,11 @@ static usize test_failed;
 
 
 int
-#ifdef _WIN32
-mainCRTStartup()
-#else
+//#ifdef _WIN32
+//mainCRTStartup()
+//#else
 main()
-#endif
+//#endif
 {
 	stdOut = getStdOut();
 	stdErr = getStdErr();
