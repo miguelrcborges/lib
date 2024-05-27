@@ -16,11 +16,11 @@ static usize test_failed;
 
 
 int
-//#ifdef _WIN32
-//mainCRTStartup()
-//#else
+#if defined(_WIN32) && !defined(LIBC_BACKEND)
+mainCRTStartup()
+#else
 main()
-//#endif
+#endif
 {
 	stdOut = getStdOut();
 	stdErr = getStdErr();
